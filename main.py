@@ -332,6 +332,110 @@ async def daily(ctx):
 
 # --- Auto Register Commands ---
 # Admin Commands
+class AdminView(View):
+    def __init__(self):
+        super().__init__()
+
+    @discord.ui.button(label="📝 Update Order", style=discord.ButtonStyle.blurple)
+    @is_admin()
+    async def update_order_button(self, interaction: discord.Interaction, button: Button):
+        modal = UpdateOrderModal()
+        await interaction.response.send_modal(modal)
+
+    @discord.ui.button(label="🎁 Give Points", style=discord.ButtonStyle.green)
+    @is_admin()
+    async def give_points_button(self, interaction: discord.Interaction, button: Button):
+        modal = GivePointsModal()
+        await interaction.response.send_modal(modal)
+
+    @discord.ui.button(label="📋 View Orders", style=discord.ButtonStyle.grey)
+    @is_admin()
+    async def view_orders_button(self, interaction: discord.Interaction, button: Button):
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
+        orders = c.fetchall()
+        conn.close()
+
+        embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
+        for order in orders:
+            embed.add_field(
+                name=f"Order #{order[0]}",
+                value=f"User: {order[1]}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
+                inline=False
+            )
+        await interaction.response.send_message(embed=embed)
+
+class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
+    order_id = discord.ui.TextInput(
+        label="Order ID",
+        style=discord.TextStyle.short,
+        placeholder="Enter order ID",
+        required=True
+    )
+    status = discord.ui.TextInput(
+        label="New Status",
+        style=discord.TextStyle.short,
+        placeholder="e.g., Completed, Processing, Cancelled",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            order_id = int(self.order_id.value)
+            status = self.status.value
+            
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
+            conn.commit()
+            conn.close()
+            
+            await interaction.response.send_message(f"✅ Order #{order_id} status updated to: {status}", ephemeral=True)
+        except ValueError:
+            await interaction.response.send_message("❌ Invalid order ID format", ephemeral=True)
+
+class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
+    user_id = discord.ui.TextInput(
+        label="User ID",
+        style=discord.TextStyle.short,
+        placeholder="Enter user ID",
+        required=True
+    )
+    points = discord.ui.TextInput(
+        label="Points",
+        style=discord.TextStyle.short,
+        placeholder="Enter points amount",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            user_id = int(self.user_id.value)
+            points = int(self.points.value)
+            
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
+                      (user_id, points, points))
+            conn.commit()
+            conn.close()
+            
+            await interaction.response.send_message(f"✅ Added {points} points to user {user_id}", ephemeral=True)
+        except ValueError:
+            await interaction.response.send_message("❌ Invalid input format", ephemeral=True)
+
+@bot.command()
+@is_admin()
+async def admin(ctx):
+    """Shows admin control panel"""
+    embed = discord.Embed(
+        title="🔐 Admin Control Panel",
+        description="Use the buttons below to manage orders and users",
+        color=discord.Color.red()
+    )
+    await ctx.send(embed=embed, view=AdminView())
+
 @bot.command()
 @is_admin()
 async def update_order(ctx, order_id: int, status: str):
