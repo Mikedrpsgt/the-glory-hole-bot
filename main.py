@@ -215,6 +215,7 @@ class MenuView(View):
             color=discord.Color.pink()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
+        
 # --- Loyalty System ---
 @tasks.loop(hours=24)
 async def update_loyalty():
