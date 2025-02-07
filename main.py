@@ -199,22 +199,22 @@ class MenuView(View):
         await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**", ephemeral=True)
 
 @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
-async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
-    user_id = interaction.user.id
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
-    result = c.fetchone()
-    conn.close()
+    async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_id = interaction.user.id
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        conn.close()
 
-    tier, points = result if result else ("Flirty Bronze", 0)
+        tier, points = result if result else ("Flirty Bronze", 0)
 
-    embed = discord.Embed(
-        title="💖 Your VIP Sweet Holes Card 💖",
-        description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
-        color=discord.Color.pink()
-    )
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+        embed = discord.Embed(
+            title="💖 Your VIP Sweet Holes Card 💖",
+            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+            color=discord.Color.pink()
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 # --- Loyalty System ---
 @tasks.loop(hours=24)
 async def update_loyalty():
@@ -319,20 +319,26 @@ class AdminView(View):
         super().__init__()
 
     @discord.ui.button(label="📝 Update Order", style=discord.ButtonStyle.blurple)
-    @is_admin()
     async def update_order_button(self, interaction: discord.Interaction, button: Button):
+        if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+            await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+            return
         modal = UpdateOrderModal()
         await interaction.response.send_modal(modal)
 
     @discord.ui.button(label="🎁 Give Points", style=discord.ButtonStyle.green)
-    @is_admin()
     async def give_points_button(self, interaction: discord.Interaction, button: Button):
+        if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+            await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+            return
         modal = GivePointsModal()
         await interaction.response.send_modal(modal)
 
     @discord.ui.button(label="📋 View Orders", style=discord.ButtonStyle.grey)
-    @is_admin()
     async def view_orders_button(self, interaction: discord.Interaction, button: Button):
+        if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+            await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+            return
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
         c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
@@ -455,7 +461,7 @@ async def view_all_orders(interaction: discord.Interaction):
             value=f"User: {order[1]}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
             inline=False
         )
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 @bot.event
 async def on_ready():
