@@ -24,11 +24,13 @@ conn.commit()
 
 # Bot Setup
 intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Brand Assets
-MAIN_LOGO_URL = "https://yourhost.com/main-logo.png"
-FOOTER_IMAGE_URL = "https://yourhost.com/footer.png"
+MAIN_LOGO_URL = "https://raw.githubusercontent.com/your-repo/assets/main/logo.png"  # Update this URL
+FOOTER_IMAGE_URL = MAIN_LOGO_URL  # Using same logo for footer
 
 # Loyalty Tiers & Perks
 LOYALTY_TIERS = {
@@ -71,6 +73,9 @@ class OrderView(View):
         try:
             item, quantity = msg.content.split(", ")
             quantity = int(quantity)
+            if quantity <= 0 or quantity > 100:
+                await interaction.followup.send("⚠️ Honey, please order between 1 and 100 items! 😘", ephemeral=True)
+                return
             user_id = interaction.user.id
             c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", (user_id, item, quantity))
             conn.commit()
