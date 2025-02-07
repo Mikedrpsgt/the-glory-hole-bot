@@ -83,22 +83,24 @@ class OrderView(View):
         )
 
         async def on_submit(self, interaction: discord.Interaction):
-            order_text = self.order_input.value
+            try:
+                order_text = self.order_input.value
+                conn = sqlite3.connect('orders.db')
+                c = conn.cursor()
+                c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", 
+                         (interaction.user.id, order_text, 1))
+                conn.commit()
+                order_id = c.lastrowid
+                conn.close()
 
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-            c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", 
-                     (interaction.user.id, order_text, 1))
-            conn.commit()
-            order_id = c.lastrowid
-            conn.close()
-
-            embed = discord.Embed(
-                title="✅ Order Placed, Sweetheart!",
-                description=f"**Order ID:** `{order_id}`\n🍩 **Order:** {order_text}",
-                color=discord.Color.pink()
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+                embed = discord.Embed(
+                    title="✅ Order Placed, Sweetheart!",
+                    description=f"**Order ID:** `{order_id}`\n🍩 **Order:** {order_text}",
+                    color=discord.Color.pink()
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message("❌ Oops! Something went wrong with your order. Please try again!", ephemeral=True)
 
     @discord.ui.button(label="🍩 Place Order", style=discord.ButtonStyle.green)
     async def place_order(self, interaction: discord.Interaction, button: Button):
@@ -140,14 +142,24 @@ class OrderView(View):
                     order_id = int(self.order_id.value)
                     conn = sqlite3.connect('orders.db')
                     c = conn.cursor()
-                    c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", 
+                    c.execute("SELECT status FROM orders WHERE order_id = ? AND user_id = ?", 
                             (order_id, interaction.user.id))
-                    if c.rowcount > 0:
-                        conn.commit()
-                        await interaction.response.send_message(
-                            f"💝 Order #{order_id} cancelled, darling!", 
-                            ephemeral=True
-                        )
+                    order = c.fetchone()
+                    
+                    if order:
+                        if order[0] == 'Pending':
+                            c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", 
+                                    (order_id, interaction.user.id))
+                            conn.commit()
+                            await interaction.response.send_message(
+                                f"💝 Order #{order_id} cancelled, darling!", 
+                                ephemeral=True
+                            )
+                        else:
+                            await interaction.response.send_message(
+                                "❌ Sorry sweetie, you can only cancel pending orders!", 
+                                ephemeral=True
+                            )
                     else:
                         await interaction.response.send_message(
                             "❌ Order not found or not yours to cancel, sweetie!", 
