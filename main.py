@@ -436,33 +436,30 @@ async def admin(ctx):
     )
     await ctx.send(embed=embed, view=AdminView())
 
-@bot.command()
+@bot.tree.command(name="update_order", description="Update order status (Admin only)")
 @is_admin()
-async def update_order(ctx, order_id: int, status: str):
-    """Update order status (Admin only)"""
+async def update_order(interaction: discord.Interaction, order_id: int, status: str):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
     c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
     conn.commit()
     conn.close()
-    await ctx.send(f"✅ Order #{order_id} status updated to: {status}")
+    await interaction.response.send_message(f"✅ Order #{order_id} status updated to: {status}")
 
-@bot.command()
+@bot.tree.command(name="give_points", description="Give points to a user (Admin only)")
 @is_admin()
-async def give_points(ctx, user_id: int, points: int):
-    """Give points to a user (Admin only)"""
+async def give_points(interaction: discord.Interaction, user_id: int, points: int):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
     c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
               (user_id, points, points))
     conn.commit()
     conn.close()
-    await ctx.send(f"✅ Added {points} points to user {user_id}")
+    await interaction.response.send_message(f"✅ Added {points} points to user {user_id}")
 
-@bot.command()
+@bot.tree.command(name="view_all_orders", description="View all orders (Admin only)")
 @is_admin()
-async def view_all_orders(ctx):
-    """View all orders (Admin only)"""
+async def view_all_orders(interaction: discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
     c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
