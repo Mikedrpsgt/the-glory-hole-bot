@@ -128,26 +128,39 @@ class OrderView(View):
 
     @discord.ui.button(label="❌ Cancel Order", style=discord.ButtonStyle.red)
     async def cancel_order(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_message("Enter the order ID to cancel: ", ephemeral=True)
-        
-        def check(m):
-            return m.author == interaction.user and m.channel == interaction.channel
-
-        try:
-            msg = await interaction.client.wait_for("message", timeout=30.0, check=check)
-            order_id = int(msg.content)
+        class CancelModal(discord.ui.Modal, title="Cancel Order"):
+            order_id = discord.ui.TextInput(
+                label="Order ID to Cancel",
+                placeholder="Enter the order ID",
+                required=True
+            )
             
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-            c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", (order_id, interaction.user.id))
-            if c.rowcount > 0:
-                conn.commit()
-                await interaction.followup.send(f"💝 Order #{order_id} cancelled, darling!", ephemeral=True)
-            else:
-                await interaction.followup.send("❌ Order not found or not yours to cancel, sweetie!", ephemeral=True)
-            conn.close()
-        except asyncio.TimeoutError:
-            await interaction.followup.send("⏰ Time's up, sugar! Try again when you're ready.", ephemeral=True)
+            async def on_submit(self, interaction: discord.Interaction):
+                try:
+                    order_id = int(self.order_id.value)
+                    conn = sqlite3.connect('orders.db')
+                    c = conn.cursor()
+                    c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", 
+                            (order_id, interaction.user.id))
+                    if c.rowcount > 0:
+                        conn.commit()
+                        await interaction.response.send_message(
+                            f"💝 Order #{order_id} cancelled, darling!", 
+                            ephemeral=True
+                        )
+                    else:
+                        await interaction.response.send_message(
+                            "❌ Order not found or not yours to cancel, sweetie!", 
+                            ephemeral=True
+                        )
+                    conn.close()
+                except ValueError:
+                    await interaction.response.send_message(
+                        "❌ Please enter a valid order number, sugar!", 
+                        ephemeral=True
+                    )
+                    
+        await interaction.response.send_modal(CancelModal())
 
 class MenuView(View):
     def __init__(self):
