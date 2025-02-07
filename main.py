@@ -133,6 +133,46 @@ async def flirt(ctx):
     """Get a random pickup line."""
     await ctx.send(random.choice(PICKUP_LINES))
 
+@bot.command(name='help')
+async def help_command(ctx):
+    """Show all available commands."""
+    embed = discord.Embed(title="🍩 Sweet Holes Bot Commands", color=discord.Color.purple())
+    embed.add_field(name="!points", value="Check your loyalty points and tier", inline=False)
+    embed.add_field(name="!truth", value="Get a random truth question", inline=False)
+    embed.add_field(name="!dare", value="Get a random dare challenge", inline=False)
+    embed.add_field(name="!flirt", value="Get a random pickup line", inline=False)
+    embed.add_field(name="!leaderboard", value="Show top 5 users by points", inline=False)
+    embed.set_footer(text="Sweet Holes Bake Shop - Serving Sweetness & Sass 🍩💖")
+    await ctx.send(embed=embed)
+
+@bot.command(name='leaderboard')
+async def leaderboard(ctx):
+    """Show top 5 users by points."""
+    c.execute("SELECT user_id, points FROM rewards ORDER BY points DESC LIMIT 5")
+    top_users = c.fetchall()
+    
+    embed = discord.Embed(title="🏆 Top Sweet Souls", color=discord.Color.gold())
+    
+    for idx, (user_id, points) in enumerate(top_users, 1):
+        user = ctx.guild.get_member(user_id)
+        name = user.name if user else f"User {user_id}"
+        embed.add_field(name=f"#{idx} {name}", value=f"{points} points", inline=False)
+    
+    await ctx.send(embed=embed)
+
+@bot.event
+async def on_message(message):
+    """Add points for active chatters."""
+    if message.author.bot:
+        return
+        
+    # Add 1 point for each message
+    c.execute("INSERT OR REPLACE INTO rewards (user_id, points) VALUES (?, COALESCE((SELECT points + 1 FROM rewards WHERE user_id = ?), 1))", 
+              (message.author.id, message.author.id))
+    conn.commit()
+    
+    await bot.process_commands(message)
+
 # Run bot with environment variable
 TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
