@@ -245,7 +245,7 @@ async def menu(ctx):
         description="Click the buttons below to interact!",
         color=discord.Color.pink()
     )
-    await ctx.send(embed=embed, view=MenuView())
+    await ctx.send(embed=embed, view=MenuView(), ephemeral=True)
 
 @bot.hybrid_command(name="order", description="Show the order menu")
 async def order(ctx):
@@ -255,7 +255,7 @@ async def order(ctx):
         description="What can we get for you today, sugar? 😘",
         color=discord.Color.pink()
     )
-    await ctx.send(embed=embed, view=OrderView())
+    await ctx.send(embed=embed, view=OrderView(), ephemeral=True)
 
 @bot.command()
 async def my_tier(ctx):
@@ -284,19 +284,19 @@ async def my_tier(ctx):
 async def pickup(ctx):
     """Sends a fun, flirty pick-up line."""
     line = random.choice(PICKUP_LINES)
-    await ctx.send(f"💋 **Sweet Holes Flirty Line:** {line}")
+    await ctx.send(f"💋 **Sweet Holes Flirty Line:** {line}", ephemeral=True)
 
 @bot.command()
 async def truth(ctx):
     """Gives a flirty truth question."""
     question = random.choice(TRUTH_QUESTIONS)
-    await ctx.send(f"💖 **Truth:** {question}")
+    await ctx.send(f"💖 **Truth:** {question}", ephemeral=True)
 
 @bot.command()
 async def dare(ctx):
     """Gives a fun dare task."""
     dare = random.choice(DARE_TASKS)
-    await ctx.send(f"🔥 **Dare:** {dare}")
+    await ctx.send(f"🔥 **Dare:** {dare}", ephemeral=True)
 
 @bot.command()
 async def daily(ctx):
@@ -423,7 +423,7 @@ async def admin(ctx):
         description="Use the buttons below to manage orders and users",
         color=discord.Color.red()
     )
-    await ctx.send(embed=embed, view=AdminView())
+    await ctx.send(embed=embed, view=AdminView(), ephemeral=True)
 
 @bot.tree.command(name="update_order", description="Update order status (Admin only)")
 @is_admin()
