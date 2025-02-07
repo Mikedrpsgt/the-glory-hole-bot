@@ -33,7 +33,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Business Admin Channel ID (Replace with actual channel ID)
-ADMIN_CHANNEL_ID = 123456789012345678  
+ADMIN_CHANNEL_ID = 1337400405621211217  
 
 # Brand Assets (Main Logo & Footer)
 MAIN_LOGO_URL = "https://yourhost.com/main-logo.png"
