@@ -491,6 +491,97 @@ async def view_all_orders(interaction: discord.Interaction):
         )
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="view_feedback", description="View the last 5 customer reviews")
+@is_admin()
+async def view_feedback(interaction: discord.Interaction):
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM feedback ORDER BY feedback_id DESC LIMIT 5")
+    reviews = c.fetchall()
+    conn.close()
+
+    embed = discord.Embed(title="💖 Customer Reviews", color=discord.Color.pink())
+    for review in reviews:
+        embed.add_field(
+            name=f"Review #{review[0]}",
+            value=f"Rating: {'⭐' * review[2]}\nComment: {review[3]}",
+            inline=False
+        )
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="vip_report", description="Generate VIP business report")
+@is_admin()
+async def vip_report(interaction: discord.Interaction):
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    
+    # Get today's orders
+    c.execute("SELECT COUNT(*), SUM(quantity) FROM orders WHERE date(datetime('now'))")
+    orders_data = c.fetchone()
+    daily_orders = orders_data[0] or 0
+    daily_items = orders_data[1] or 0
+    
+    # Get point redemptions
+    c.execute("SELECT COUNT(*) FROM rewards WHERE points > 0")
+    total_vip = c.fetchone()[0] or 0
+    
+    conn.close()
+
+    embed = discord.Embed(title="📊 VIP Business Report", color=discord.Color.gold())
+    embed.add_field(name="Daily Orders", value=str(daily_orders), inline=True)
+    embed.add_field(name="Items Sold", value=str(daily_items), inline=True)
+    embed.add_field(name="Total VIP Members", value=str(total_vip), inline=True)
+    
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="add_vendor", description="Add a new vendor to rewards program")
+@is_admin()
+async def add_vendor(interaction: discord.Interaction, vendor_name: str, points_rate: int):
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS vendors 
+                 (vendor_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT, points_rate INTEGER)''')
+    
+    c.execute("INSERT INTO vendors (name, points_rate) VALUES (?, ?)", 
+              (vendor_name, points_rate))
+    conn.commit()
+    conn.close()
+    
+    await interaction.response.send_message(
+        f"✅ Added vendor: {vendor_name} (Points Rate: {points_rate})",
+        ephemeral=True
+    )
+
+@bot.tree.command(name="update_loyalty", description="Manually update customer loyalty tiers")
+@is_admin()
+async def manual_update_loyalty(interaction: discord.Interaction):
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+
+    c.execute("SELECT user_id, points FROM rewards")
+    users = c.fetchall()
+    updated = 0
+
+    for user_id, points in users:
+        new_tier = "Flirty Bronze"
+        for tier, min_points in LOYALTY_TIERS.items():
+            if points >= min_points:
+                new_tier = tier
+        
+        c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", 
+                  (new_tier, user_id))
+        updated += 1
+
+    conn.commit()
+    conn.close()
+    
+    await interaction.response.send_message(
+        f"✅ Updated loyalty tiers for {updated} users", 
+        ephemeral=True
+    )
+
 @bot.event
 async def on_ready():
     """Auto syncs commands on startup."""
