@@ -63,9 +63,90 @@ class OrderView(View):
     def __init__(self):
         super().__init__()
 
-    @discord.ui.button(label="Place Order", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="🍩 Place Order", style=discord.ButtonStyle.green)
     async def place_order(self, interaction: discord.Interaction, button: Button):
         await interaction.response.defer()
+        
+    @discord.ui.button(label="📦 Check Status", style=discord.ButtonStyle.blurple)
+    async def check_status(self, interaction: discord.Interaction, button: Button):
+        user_id = interaction.user.id
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT order_id, item, quantity, status FROM orders WHERE user_id = ? ORDER BY order_id DESC LIMIT 5", (user_id,))
+        orders = c.fetchall()
+        conn.close()
+
+        if not orders:
+            await interaction.response.send_message("💔 No orders found, sweetie! Time to treat yourself? 😘", ephemeral=True)
+            return
+
+        embed = discord.Embed(title="🎀 Your Recent Orders", color=discord.Color.pink())
+        for order in orders:
+            embed.add_field(
+                name=f"Order #{order[0]}",
+                value=f"🍩 Item: {order[1]}\n📦 Quantity: {order[2]}\n📋 Status: {order[3]}",
+                inline=False
+            )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="❌ Cancel Order", style=discord.ButtonStyle.red)
+    async def cancel_order(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_message("Enter the order ID to cancel: ", ephemeral=True)
+        
+        def check(m):
+            return m.author == interaction.user and m.channel == interaction.channel
+
+        try:
+            msg = await interaction.client.wait_for("message", timeout=30.0, check=check)
+            order_id = int(msg.content)
+            
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", (order_id, interaction.user.id))
+            if c.rowcount > 0:
+                conn.commit()
+                await interaction.followup.send(f"💝 Order #{order_id} cancelled, darling!", ephemeral=True)
+            else:
+                await interaction.followup.send("❌ Order not found or not yours to cancel, sweetie!", ephemeral=True)
+            conn.close()
+        except asyncio.TimeoutError:
+            await interaction.followup.send("⏰ Time's up, sugar! Try again when you're ready.", ephemeral=True)
+
+class MenuView(View):
+    def __init__(self):
+        super().__init__()
+
+    @discord.ui.button(label="🎁 Daily Reward", style=discord.ButtonStyle.green)
+    async def daily_reward(self, interaction: discord.Interaction, button: Button):
+        user_id = interaction.user.id
+        bonus_points = random.randint(5, 15)
+        
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
+                  (user_id, bonus_points, bonus_points))
+        conn.commit()
+        conn.close()
+        
+        await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**", ephemeral=True)
+
+    @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
+    async def check_tier(self, interaction: discord.Interaction, button: Button):
+        user_id = interaction.user.id
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        conn.close()
+        
+        tier, points = result if result else ("Flirty Bronze", 0)
+        
+        embed = discord.Embed(
+            title="💖 Your VIP Sweet Holes Card 💖",
+            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+            color=discord.Color.pink()
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.followup.send("🍩 **Tell me what you're craving, sugar!**\n`item_name, quantity` format, baby. 😉", ephemeral=True)
 
         def check(m):
@@ -117,6 +198,26 @@ async def update_loyalty():
 
     conn.commit()
     conn.close()
+
+@bot.hybrid_command(name="menu", description="Show the interactive menu")
+async def menu(ctx):
+    """Shows the interactive menu with buttons."""
+    embed = discord.Embed(
+        title="🎀 Sweet Holes Interactive Menu 🎀",
+        description="Click the buttons below to interact!",
+        color=discord.Color.pink()
+    )
+    await ctx.send(embed=embed, view=MenuView())
+
+@bot.hybrid_command(name="order", description="Show the order menu")
+async def order(ctx):
+    """Shows the order menu with buttons."""
+    embed = discord.Embed(
+        title="🍩 Sweet Holes Order System 🍩",
+        description="What can we get for you today, sugar? 😘",
+        color=discord.Color.pink()
+    )
+    await ctx.send(embed=embed, view=OrderView())
 
 @bot.command()
 async def my_tier(ctx):
