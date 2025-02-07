@@ -29,6 +29,7 @@ conn.commit()
 
 # Bot Setup
 intents = discord.Intents.default()
+intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Business Admin Channel ID (Replace with actual channel ID)
@@ -170,7 +171,7 @@ async def daily_report():
     )
     embed.add_field(name="📦 Orders Fulfilled", value=f"**{completed_orders}** - Our customers are eating *good* 😘", inline=False)
     embed.add_field(name="🎁 Reward Points Earned", value=f"**{total_points}** - They love us, what can we say? 😏", inline=False)
-    embed.add_field(name="🛍️ Redemptions Processed", value=f"**{redemptions_week}** - Who's getting spoiled? 😉", inline=False)
+    embed.add_field(name="🛍️ Redemptions Processed", value=f"**{total_redemptions}** - Who's getting spoiled? 😉", inline=False)
     embed.add_field(name="⭐ Customer Rating", value=f"**{avg_rating}** - We aim to please, baby! 😘", inline=False)
     embed.set_thumbnail(url=MAIN_LOGO_URL)
     embed.set_footer(text="Sweet Holes Bake Shop - Serving Sweetness & Sass 🍩💖", icon_url=FOOTER_IMAGE_URL)
