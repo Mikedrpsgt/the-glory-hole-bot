@@ -65,32 +65,31 @@ class OrderView(View):
 
     @discord.ui.button(label="🍩 Place Order", style=discord.ButtonStyle.green)
     async def place_order(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_message("🍩 **Tell me what you're craving, sugar!**\n`item_name, quantity` format, baby. 😉", ephemeral=True)
+        await interaction.response.send_message("🍩 **Tell me what you're craving, sugar!** Just type your order! 😉", ephemeral=True)
 
         def check(m):
             return m.author == interaction.user and m.channel == interaction.channel
 
         try:
             msg = await interaction.client.wait_for("message", timeout=30.0, check=check)
-            item, quantity = msg.content.split(", ")
-            quantity = int(quantity)
+            order_text = msg.content
             
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", 
-                     (interaction.user.id, item, quantity))
+                     (interaction.user.id, order_text, 1))
             conn.commit()
             order_id = c.lastrowid
             conn.close()
 
             embed = discord.Embed(
                 title="✅ Order Placed, Sweetheart!",
-                description=f"**Order ID:** `{order_id}`\n🍩 **Item:** {item}\n📦 **Quantity:** {quantity}",
+                description=f"**Order ID:** `{order_id}`\n🍩 **Order:** {order_text}",
                 color=discord.Color.pink()
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
         except:
-            await interaction.followup.send("⚠️ Oops, honey! Try `item_name, quantity` format. Don't make me beg. 😘", ephemeral=True)
+            await interaction.followup.send("⚠️ Oops, something went wrong! Please try ordering again, sugar! 😘", ephemeral=True)
         
     @discord.ui.button(label="📦 Check Status", style=discord.ButtonStyle.blurple)
     async def check_status(self, interaction: discord.Interaction, button: Button):
