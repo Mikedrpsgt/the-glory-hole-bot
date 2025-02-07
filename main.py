@@ -30,7 +30,16 @@ setup_database()  # Ensures tables exist before the bot starts
 
 # Bot Setup
 intents = discord.Intents.default()
+intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# Admin role name
+ADMIN_ROLE_NAME = "Sweet Holes Admin"
+
+def is_admin():
+    async def predicate(ctx):
+        return discord.utils.get(ctx.author.roles, name=ADMIN_ROLE_NAME) is not None
+    return commands.check(predicate)
 
 # Brand Assets
 MAIN_LOGO_URL = "https://yourhost.com/main-logo.png"
@@ -322,6 +331,49 @@ async def daily(ctx):
     await ctx.send(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
 
 # --- Auto Register Commands ---
+# Admin Commands
+@bot.command()
+@is_admin()
+async def update_order(ctx, order_id: int, status: str):
+    """Update order status (Admin only)"""
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
+    conn.commit()
+    conn.close()
+    await ctx.send(f"✅ Order #{order_id} status updated to: {status}")
+
+@bot.command()
+@is_admin()
+async def give_points(ctx, user_id: int, points: int):
+    """Give points to a user (Admin only)"""
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
+              (user_id, points, points))
+    conn.commit()
+    conn.close()
+    await ctx.send(f"✅ Added {points} points to user {user_id}")
+
+@bot.command()
+@is_admin()
+async def view_all_orders(ctx):
+    """View all orders (Admin only)"""
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
+    orders = c.fetchall()
+    conn.close()
+
+    embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
+    for order in orders:
+        embed.add_field(
+            name=f"Order #{order[0]}",
+            value=f"User: {order[1]}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
+            inline=False
+        )
+    await ctx.send(embed=embed)
+
 @bot.event
 async def on_ready():
     """Auto syncs commands on startup."""
