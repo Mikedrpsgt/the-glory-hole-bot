@@ -84,7 +84,7 @@ class OrderView(View):
 
         async def on_submit(self, interaction: discord.Interaction):
             order_text = self.order_input.value
-            
+
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", 
@@ -103,7 +103,7 @@ class OrderView(View):
     @discord.ui.button(label="🍩 Place Order", style=discord.ButtonStyle.green)
     async def place_order(self, interaction: discord.Interaction, button: Button):
         await interaction.response.send_modal(self.OrderModal())
-        
+
     @discord.ui.button(label="📦 Check Status", style=discord.ButtonStyle.blurple)
     async def check_status(self, interaction: discord.Interaction, button: Button):
         user_id = interaction.user.id
@@ -134,7 +134,7 @@ class OrderView(View):
                 placeholder="Enter the order ID",
                 required=True
             )
-            
+
             async def on_submit(self, interaction: discord.Interaction):
                 try:
                     order_id = int(self.order_id.value)
@@ -159,7 +159,7 @@ class OrderView(View):
                         "❌ Please enter a valid order number, sugar!", 
                         ephemeral=True
                     )
-                    
+
         await interaction.response.send_modal(CancelModal())
 
 class MenuView(View):
@@ -169,24 +169,24 @@ class MenuView(View):
     @discord.ui.button(label="🎁 Daily Reward", style=discord.ButtonStyle.green)
     async def daily_reward(self, interaction: discord.Interaction, button: Button):
         user_id = interaction.user.id
-        
+
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Check last claim time
         c.execute("SELECT last_daily FROM rewards WHERE user_id = ?", (user_id,))
         result = c.fetchone()
-        
+
         if result and result[0]:
             last_claim = datetime.fromisoformat(result[0])
             time_diff = datetime.now() - last_claim
-            
+
             if time_diff.total_seconds() < 86400:  # 24 hours in seconds
                 hours_left = 24 - (time_diff.total_seconds() / 3600)
                 await interaction.response.send_message(f"⏰ Hold up sweetie! You can claim again in {int(hours_left)} hours!", ephemeral=True)
                 conn.close()
                 return
-        
+
         bonus_points = random.randint(5, 15)
         c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
                     VALUES (?, ?, datetime('now')) 
@@ -195,10 +195,10 @@ class MenuView(View):
                  (user_id, bonus_points, bonus_points))
         conn.commit()
         conn.close()
-        
+
         await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**", ephemeral=True)
 
-@discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
     async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = interaction.user.id
         conn = sqlite3.connect('orders.db')
@@ -215,7 +215,7 @@ class MenuView(View):
             color=discord.Color.pink()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+
 # --- Loyalty System ---
 @tasks.loop(hours=24)
 async def update_loyalty():
@@ -373,13 +373,13 @@ class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
         try:
             order_id = int(self.order_id.value)
             status = self.status.value
-            
+
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
             conn.commit()
             conn.close()
-            
+
             await interaction.response.send_message(f"✅ Order #{order_id} status updated to: {status}", ephemeral=True)
         except ValueError:
             await interaction.response.send_message("❌ Invalid order ID format", ephemeral=True)
@@ -402,14 +402,14 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
         try:
             user_id = int(self.user_id.value)
             points = int(self.points.value)
-            
+
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
                       (user_id, points, points))
             conn.commit()
             conn.close()
-            
+
             await interaction.response.send_message(f"✅ Added {points} points to user {user_id}", ephemeral=True)
         except ValueError:
             await interaction.response.send_message("❌ Invalid input format", ephemeral=True)
