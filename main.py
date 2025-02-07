@@ -5,6 +5,7 @@ import sqlite3
 import os
 import asyncio
 import random
+from datetime import datetime
 
 # Database Setup & Auto Creation
 def setup_database():
@@ -16,7 +17,8 @@ def setup_database():
                  (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
 
     c.execute('''CREATE TABLE IF NOT EXISTS rewards 
-                 (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze')''')
+                 (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
+                  last_daily TIMESTAMP)''')
 
     c.execute('''CREATE TABLE IF NOT EXISTS feedback 
                  (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)''')
@@ -143,12 +145,30 @@ class MenuView(View):
     @discord.ui.button(label="🎁 Daily Reward", style=discord.ButtonStyle.green)
     async def daily_reward(self, interaction: discord.Interaction, button: Button):
         user_id = interaction.user.id
-        bonus_points = random.randint(5, 15)
         
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
-                  (user_id, bonus_points, bonus_points))
+        
+        # Check last claim time
+        c.execute("SELECT last_daily FROM rewards WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        
+        if result and result[0]:
+            last_claim = datetime.fromisoformat(result[0])
+            time_diff = datetime.now() - last_claim
+            
+            if time_diff.total_seconds() < 86400:  # 24 hours in seconds
+                hours_left = 24 - (time_diff.total_seconds() / 3600)
+                await interaction.response.send_message(f"⏰ Hold up sweetie! You can claim again in {int(hours_left)} hours!", ephemeral=True)
+                conn.close()
+                return
+        
+        bonus_points = random.randint(5, 15)
+        c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
+                    VALUES (?, ?, datetime('now')) 
+                    ON CONFLICT(user_id) DO UPDATE 
+                    SET points = points + ?, last_daily = datetime('now')""", 
+                 (user_id, bonus_points, bonus_points))
         conn.commit()
         conn.close()
         
