@@ -151,9 +151,13 @@ async def my_tier(ctx):
 async def daily_report():
     """Daily business report."""
     await bot.wait_until_ready()
-    channel = bot.get_channel(ADMIN_CHANNEL_ID)
-    if not channel:
-        print(f"❌ Error: Could not find channel with ID {ADMIN_CHANNEL_ID}")
+    
+    # Get application owner
+    app_info = await bot.application_info()
+    owner = app_info.owner
+    
+    if not owner:
+        print("❌ Error: Could not find bot owner")
         return
 
     c.execute("SELECT COUNT(*) FROM orders WHERE status = 'Completed'")
@@ -179,7 +183,10 @@ async def daily_report():
     embed.set_thumbnail(url=MAIN_LOGO_URL)
     embed.set_footer(text="Sweet Holes Bake Shop - Serving Sweetness & Sass 🍩💖", icon_url=FOOTER_IMAGE_URL)
 
-    await channel.send(embed=embed)
+    try:
+        await owner.send(embed=embed)
+    except discord.errors.Forbidden:
+        print("❌ Error: Could not send DM to bot owner")
 
 @bot.event
 async def on_ready():
