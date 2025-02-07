@@ -6,31 +6,33 @@ import os
 import asyncio
 import random
 
-# Database Setup
-conn = sqlite3.connect('orders.db')
-c = conn.cursor()
+# Database Setup & Auto Creation
+def setup_database():
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
 
-# Create Tables
-c.execute('''CREATE TABLE IF NOT EXISTS orders 
-             (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
+    # Create tables if they don't exist
+    c.execute('''CREATE TABLE IF NOT EXISTS orders 
+                 (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
 
-c.execute('''CREATE TABLE IF NOT EXISTS rewards 
-             (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze')''')
+    c.execute('''CREATE TABLE IF NOT EXISTS rewards 
+                 (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze')''')
 
-c.execute('''CREATE TABLE IF NOT EXISTS feedback 
-             (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS feedback 
+                 (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)''')
 
-conn.commit()
+    conn.commit()
+    conn.close()
+
+setup_database()  # Ensures tables exist before the bot starts
 
 # Bot Setup
 intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Brand Assets
-MAIN_LOGO_URL = "https://raw.githubusercontent.com/your-repo/assets/main/logo.png"  # Update this URL
-FOOTER_IMAGE_URL = MAIN_LOGO_URL  # Using same logo for footer
+MAIN_LOGO_URL = "https://yourhost.com/main-logo.png"
+FOOTER_IMAGE_URL = "https://yourhost.com/footer.png"
 
 # Loyalty Tiers & Perks
 LOYALTY_TIERS = {
@@ -73,13 +75,13 @@ class OrderView(View):
         try:
             item, quantity = msg.content.split(", ")
             quantity = int(quantity)
-            if quantity <= 0 or quantity > 100:
-                await interaction.followup.send("⚠️ Honey, please order between 1 and 100 items! 😘", ephemeral=True)
-                return
             user_id = interaction.user.id
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
             c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", (user_id, item, quantity))
             conn.commit()
             order_id = c.lastrowid
+            conn.close()
 
             embed = discord.Embed(
                 title="✅ Order Placed, Sweetheart!",
@@ -99,6 +101,9 @@ class OrderView(View):
 @tasks.loop(hours=24)
 async def update_loyalty():
     """Upgrades users based on points."""
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+
     c.execute("SELECT user_id, points FROM rewards")
     users = c.fetchall()
 
@@ -111,18 +116,19 @@ async def update_loyalty():
         c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", (new_tier, user_id))
 
     conn.commit()
+    conn.close()
 
 @bot.command()
 async def my_tier(ctx):
     """Check your loyalty tier."""
     user_id = ctx.author.id
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
     c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
     result = c.fetchone()
+    conn.close()
 
-    if result:
-        tier, points = result
-    else:
-        tier, points = "Flirty Bronze", 0
+    tier, points = result if result else ("Flirty Bronze", 0)
 
     embed = discord.Embed(
         title="💖 Your VIP Sweet Holes Card 💖",
@@ -159,9 +165,12 @@ async def daily(ctx):
     user_id = ctx.author.id
     bonus_points = random.randint(5, 15)
 
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
     c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
               (user_id, bonus_points, bonus_points))
     conn.commit()
+    conn.close()
 
     await ctx.send(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
 
