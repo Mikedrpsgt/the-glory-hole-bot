@@ -65,16 +65,16 @@ class OrderView(View):
     def __init__(self):
         super().__init__()
 
-    @discord.ui.button(label="🍩 Place Order", style=discord.ButtonStyle.green)
-    async def place_order(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_message("🍩 **Tell me what you're craving, sugar!** Just type your order! 😉", ephemeral=True)
+    class OrderModal(discord.ui.Modal, title="🍩 Place Your Order"):
+        order_input = discord.ui.TextInput(
+            label="What can I get you, sugar? 😘",
+            placeholder="e.g., 2 glazed donuts and 1 chocolate eclair",
+            style=discord.TextStyle.long,
+            required=True
+        )
 
-        def check(m):
-            return m.author == interaction.user and m.channel == interaction.channel
-
-        try:
-            msg = await interaction.client.wait_for("message", timeout=30.0, check=check)
-            order_text = msg.content
+        async def on_submit(self, interaction: discord.Interaction):
+            order_text = self.order_input.value
             
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
@@ -89,9 +89,11 @@ class OrderView(View):
                 description=f"**Order ID:** `{order_id}`\n🍩 **Order:** {order_text}",
                 color=discord.Color.pink()
             )
-            await interaction.followup.send(embed=embed, ephemeral=True)
-        except:
-            await interaction.followup.send("⚠️ Oops, something went wrong! Please try ordering again, sugar! 😘", ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="🍩 Place Order", style=discord.ButtonStyle.green)
+    async def place_order(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_modal(self.OrderModal())
         
     @discord.ui.button(label="📦 Check Status", style=discord.ButtonStyle.blurple)
     async def check_status(self, interaction: discord.Interaction, button: Button):
