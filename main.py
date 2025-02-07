@@ -152,6 +152,9 @@ async def daily_report():
     """Daily business report."""
     await bot.wait_until_ready()
     channel = bot.get_channel(ADMIN_CHANNEL_ID)
+    if not channel:
+        print(f"❌ Error: Could not find channel with ID {ADMIN_CHANNEL_ID}")
+        return
 
     c.execute("SELECT COUNT(*) FROM orders WHERE status = 'Completed'")
     completed_orders = c.fetchone()[0]
