@@ -198,54 +198,23 @@ class MenuView(View):
         
         await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**", ephemeral=True)
 
-    @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
-    async def check_tier(self, interaction: discord.Interaction, button: Button):
-        user_id = interaction.user.id
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
-        conn.close()
-        
-        tier, points = result if result else ("Flirty Bronze", 0)
-        
-        embed = discord.Embed(
-            title="💖 Your VIP Sweet Holes Card 💖",
-            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
-            color=discord.Color.pink()
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        await interaction.followup.send("🍩 **Tell me what you're craving, sugar!**\n`item_name, quantity` format, baby. 😉", ephemeral=True)
+@discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
+async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
+    user_id = interaction.user.id
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+    result = c.fetchone()
+    conn.close()
 
-        def check(m):
-            return m.author == interaction.user and m.channel == interaction.channel
+    tier, points = result if result else ("Flirty Bronze", 0)
 
-        msg = await bot.wait_for("message", check=check)
-        try:
-            item, quantity = msg.content.split(", ")
-            quantity = int(quantity)
-            user_id = interaction.user.id
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-            c.execute("INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')", (user_id, item, quantity))
-            conn.commit()
-            order_id = c.lastrowid
-            conn.close()
-
-            embed = discord.Embed(
-                title="✅ Order Placed, Sweetheart!",
-                description=f"**Order ID:** `{order_id}`\n🍩 **Item:** {item}\n📦 **Quantity:** {quantity}",
-                color=discord.Color.pink()
-            )
-            embed.set_thumbnail(url=MAIN_LOGO_URL)
-            embed.set_footer(text="Sweet Holes Bake Shop - Always a treat 😉", icon_url=FOOTER_IMAGE_URL)
-
-            message = await interaction.followup.send(embed=embed)
-            await message.add_reaction("💋")
-
-        except:
-            await interaction.followup.send("⚠️ Oops, honey! Try `item_name, quantity` format. Don’t make me beg. 😘", ephemeral=True)
-
+    embed = discord.Embed(
+        title="💖 Your VIP Sweet Holes Card 💖",
+        description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+        color=discord.Color.pink()
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 # --- Loyalty System ---
 @tasks.loop(hours=24)
 async def update_loyalty():
