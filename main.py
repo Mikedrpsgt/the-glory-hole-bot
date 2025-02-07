@@ -166,6 +166,21 @@ class MenuView(View):
     def __init__(self):
         super().__init__()
 
+    @discord.ui.button(label="💋 Flirt", style=discord.ButtonStyle.red)
+    async def flirt(self, interaction: discord.Interaction, button: Button):
+        line = random.choice(PICKUP_LINES)
+        await interaction.response.send_message(f"💋 **Sweet Holes Flirty Line:** {line}", ephemeral=True)
+
+    @discord.ui.button(label="💖 Truth", style=discord.ButtonStyle.purple)
+    async def truth_button(self, interaction: discord.Interaction, button: Button):
+        question = random.choice(TRUTH_QUESTIONS)
+        await interaction.response.send_message(f"💖 **Truth:** {question}", ephemeral=True)
+
+    @discord.ui.button(label="🔥 Dare", style=discord.ButtonStyle.danger)
+    async def dare_button(self, interaction: discord.Interaction, button: Button):
+        dare = random.choice(DARE_TASKS)
+        await interaction.response.send_message(f"🔥 **Dare:** {dare}", ephemeral=True)
+
     @discord.ui.button(label="🎁 Daily Reward", style=discord.ButtonStyle.green)
     async def daily_reward(self, interaction: discord.Interaction, button: Button):
         user_id = interaction.user.id
