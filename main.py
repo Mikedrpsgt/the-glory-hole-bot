@@ -99,4 +99,43 @@ async def on_ready():
     daily_report.start()
     print(f'{bot.user} has connected to Discord!')
 
-bot.run("YOUR_BOT_TOKEN") #Remember to replace YOUR_BOT_TOKEN with your actual bot token
+# Basic Commands
+@bot.command(name='points')
+async def check_points(ctx):
+    """Check your current points and tier."""
+    c.execute("SELECT points, loyalty_tier FROM rewards WHERE user_id = ?", (ctx.author.id,))
+    result = c.fetchone()
+    
+    if not result:
+        c.execute("INSERT INTO rewards (user_id) VALUES (?)", (ctx.author.id,))
+        conn.commit()
+        points, tier = 0, "Flirty Bronze"
+    else:
+        points, tier = result
+
+    embed = discord.Embed(title="🏆 Your Loyalty Status", color=discord.Color.gold())
+    embed.add_field(name="Points", value=str(points), inline=True)
+    embed.add_field(name="Tier", value=tier, inline=True)
+    await ctx.send(embed=embed)
+
+@bot.command(name='truth')
+async def truth(ctx):
+    """Get a random truth question."""
+    await ctx.send(random.choice(TRUTH_QUESTIONS))
+
+@bot.command(name='dare')
+async def dare(ctx):
+    """Get a random dare task."""
+    await ctx.send(random.choice(DARE_TASKS))
+
+@bot.command(name='flirt')
+async def flirt(ctx):
+    """Get a random pickup line."""
+    await ctx.send(random.choice(PICKUP_LINES))
+
+# Run bot with environment variable
+TOKEN = os.getenv("DISCORD_TOKEN")
+if not TOKEN:
+    raise ValueError("No Discord token found. Please set the DISCORD_TOKEN environment variable.")
+    
+bot.run(TOKEN)
