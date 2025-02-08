@@ -348,31 +348,7 @@ async def update_loyalty():
     conn.commit()
     conn.close()
 
-@bot.hybrid_command(name="menu", description="Show the interactive menu")
-async def menu(ctx):
-    """Shows the interactive menu with buttons."""
-    if ctx.channel.id != 1337692528509456414:  # Menu channel
-        await ctx.send("❌ This command can only be used in the menu channel!", ephemeral=True)
-        return
-    embed = discord.Embed(
-        title="🎀 Sweet Holes Interactive Menu 🎀",
-        description="Click the buttons below to interact!",
-        color=discord.Color.pink()
-    )
-    await ctx.send(embed=embed, view=MenuView(), ephemeral=True)
-
-@bot.hybrid_command(name="order", description="Show the order menu")
-async def order(ctx):
-    """Shows the order menu with buttons."""
-    if ctx.channel.id != 1337508683286052899:  # Orders channel
-        await ctx.send("❌ This command can only be used in the orders channel!", ephemeral=True)
-        return
-    embed = discord.Embed(
-        title="🍩 Sweet Holes Order System 🍩",
-        description="What can we get for you today, sugar? 😘",
-        color=discord.Color.pink()
-    )
-    await ctx.send(embed=embed, view=OrderView(), ephemeral=True)
+# Menu and order commands are now handled in on_ready
 
 @bot.tree.command(name="my_tier", description="Check your loyalty tier")
 async def my_tier(interaction: discord.Interaction):
