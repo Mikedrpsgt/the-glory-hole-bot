@@ -1113,14 +1113,17 @@ async def on_ready():
                 color=discord.Color.gold()
             )
             view = discord.ui.View()
-            vip_button = discord.ui.Button(label="🌟 Apply for VIP", style=discord.ButtonStyle.danger)
 
             async def vip_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337508682950377480:
                     await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
-                await vip_apply(interaction)
+                
+                response_channel = bot.get_channel(1337646191994867772)
+                modal = ApplicationModal(response_channel)
+                await interaction.response.send_modal(modal)
 
+            vip_button = discord.ui.Button(label="🌟 Apply for VIP", style=discord.ButtonStyle.danger)
             vip_button.callback = vip_callback
             view.add_item(vip_button)
             await vip_channel.send(embed=embed, view=view)
@@ -1135,14 +1138,17 @@ async def on_ready():
                 color=discord.Color.blue()
             )
             view = discord.ui.View()
-            job_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.primary)
 
             async def job_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337508683286052894:
                     await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
-                await apply(interaction)
+                
+                response_channel = bot.get_channel(1337645313279791174)
+                modal = ApplicationModal(response_channel)
+                await interaction.response.send_modal(modal)
 
+            job_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.primary)
             job_button.callback = job_callback
             view.add_item(job_button)
             await job_channel.send(embed=embed, view=view)
