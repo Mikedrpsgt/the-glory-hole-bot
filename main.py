@@ -593,6 +593,13 @@ async def view_feedback(interaction: discord.Interaction):
         )
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="apply", description="Apply for Sweet Holes VIP")
+async def apply(interaction: discord.Interaction):
+    """Opens the VIP application modal."""
+    response_channel = bot.get_channel(1337645313279791174)
+    modal = ApplicationModal(response_channel)
+    await interaction.response.send_modal(modal)
+
 @bot.tree.command(name="vip_report", description="Generate VIP business report")
 @is_admin()
 async def vip_report(interaction: discord.Interaction):
