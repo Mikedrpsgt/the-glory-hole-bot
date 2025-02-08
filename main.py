@@ -813,24 +813,24 @@ class RedeemView(discord.ui.View):
         c.execute("SELECT * FROM vendor_rewards")
         rewards = c.fetchall()
         conn.close()
-        
+
         if not rewards:
             await interaction.response.send_message("❌ No vendor rewards available!", ephemeral=True)
             return
-            
+
         embed = discord.Embed(
             title="🏪 Available Vendor Rewards",
             description="Choose a reward to redeem:",
             color=discord.Color.gold()
         )
-        
+
         for reward in rewards:
             embed.add_field(
                 name=f"{reward[2]} ({reward[3]} points)",
                 value=reward[4],
                 inline=False
             )
-            
+
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def process_redemption(self, interaction: discord.Interaction, cost: int, item: str):
@@ -869,13 +869,13 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
         placeholder="Enter the reward name",
         required=True
     )
-    
+
     points_cost = discord.ui.TextInput(
         label="Points Cost",
         placeholder="Enter points required",
         required=True
     )
-    
+
     description = discord.ui.TextInput(
         label="Description",
         style=discord.TextStyle.long,
@@ -886,10 +886,10 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
     async def on_submit(self, interaction: discord.Interaction):
         try:
             points = int(self.points_cost.value)
-            
+
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             # Create vendor rewards table if it doesn't exist
             c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
                         (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -897,20 +897,20 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
                          reward_name TEXT,
                          points_cost INTEGER,
                          description TEXT)''')
-            
+
             c.execute("INSERT INTO vendor_rewards (vendor_id, reward_name, points_cost, description) VALUES (?, ?, ?, ?)",
                      (interaction.user.id, self.reward_name.value, points, self.description.value))
-            
+
             conn.commit()
             conn.close()
-            
+
             embed = discord.Embed(
                 title="✅ Vendor Reward Added",
                 description=f"**{self.reward_name.value}**\nCost: {points} points\n{self.description.value}",
                 color=discord.Color.green()
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            
+
         except ValueError:
             await interaction.response.send_message("❌ Points cost must be a number!", ephemeral=True)
 
@@ -920,22 +920,22 @@ async def vendor_add(interaction: discord.Interaction):
     if not any(role.name == "Vendor" for role in interaction.user.roles):
         await interaction.response.send_message("❌ You need the Vendor role to use this command!", ephemeral=True)
         return
-        
+
     embed = discord.Embed(
         title="🏪 Add Vendor Reward",
         description="Click the button below to add a new reward to the redemption system",
         color=discord.Color.blue()
     )
-    
+
     view = discord.ui.View()
     add_button = discord.ui.Button(label="➕ Add Reward", style=discord.ButtonStyle.primary)
-    
+
     async def button_callback(interaction: discord.Interaction):
         await interaction.response.send_modal(VendorRewardModal())
-        
+
     add_button.callback = button_callback
     view.add_item(add_button)
-    
+
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 @bot.tree.command(name="add_points", description="Add points to a user")
@@ -945,16 +945,16 @@ async def add_points(interaction: discord.Interaction, user: discord.Member, poi
     try:
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         c.execute("""INSERT INTO rewards (user_id, points) 
                      VALUES (?, ?) 
                      ON CONFLICT(user_id) 
                      DO UPDATE SET points = points + ?""", 
                   (user.id, points, points))
-        
+
         conn.commit()
         conn.close()
-        
+
         embed = discord.Embed(
             title="✅ Points Added",
             description=f"Added {points} points to {user.mention}",
@@ -971,24 +971,24 @@ async def remove_points(interaction: discord.Interaction, user: discord.Member, 
     try:
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Check current points
         c.execute("SELECT points FROM rewards WHERE user_id = ?", (user.id,))
         result = c.fetchone()
-        
+
         if not result:
             await interaction.response.send_message("❌ User has no points!", ephemeral=True)
             return
-            
+
         current_points = result[0]
         if current_points < points:
             await interaction.response.send_message("❌ User doesn't have enough points!", ephemeral=True)
             return
-            
+
         c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, user.id))
         conn.commit()
         conn.close()
-        
+
         embed = discord.Embed(
             title="✅ Points Removed",
             description=f"Removed {points} points from {user.mention}",
@@ -1009,15 +1009,15 @@ async def remove_vendor_reward(interaction: discord.Interaction):
     try:
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Get all rewards for display
         c.execute("SELECT reward_id, reward_name, points_cost FROM vendor_rewards")
         rewards = c.fetchall()
-        
+
         if not rewards:
             await interaction.response.send_message("❌ No vendor rewards found!", ephemeral=True)
             return
-            
+
         # Create dropdown menu
         class RewardSelect(discord.ui.Select):
             def __init__(self):
@@ -1035,13 +1035,13 @@ async def remove_vendor_reward(interaction: discord.Interaction):
 
             async def callback(self, interaction: discord.Interaction):
                 reward_id = int(self.values[0])
-                
+
                 conn = sqlite3.connect('orders.db')
                 c = conn.cursor()
                 c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
                 conn.commit()
                 conn.close()
-                
+
                 embed = discord.Embed(
                     title="✅ Vendor Reward Removed",
                     description=f"Successfully removed reward ID: {reward_id}",
@@ -1052,16 +1052,16 @@ async def remove_vendor_reward(interaction: discord.Interaction):
         # Create view with dropdown
         view = discord.ui.View()
         view.add_item(RewardSelect())
-        
+
         embed = discord.Embed(
             title="🗑️ Remove Vendor Reward",
             description="Select a reward to remove from the system:",
             color=discord.Color.blue()
         )
-        
+
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         conn.close()
-        
+
     except Exception as e:
         await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
 
@@ -1129,28 +1129,28 @@ async def on_message(message):
 
     # Process commands if any
     await bot.process_commands(message)
-    
+
     # Check cooldown (1 minute between point rewards)
     user_id = message.author.id
     current_time = datetime.now()
     if user_id in message_cooldowns:
         if (current_time - message_cooldowns[user_id]).total_seconds() < 60:
             return
-    
+
     # Award points for activity
     points = random.randint(1, 3)  # Random points between 1-3
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    
+
     c.execute("""INSERT INTO rewards (user_id, points) 
                  VALUES (?, ?) 
                  ON CONFLICT(user_id) 
                  DO UPDATE SET points = points + ?""", 
               (user_id, points, points))
-    
+
     conn.commit()
     conn.close()
-    
+
     # Update cooldown
     message_cooldowns[user_id] = current_time
 
@@ -1158,18 +1158,18 @@ async def on_message(message):
 async def on_reaction_add(reaction, user):
     if user.bot:
         return
-        
+
     # Award points for reactions
     points = 1
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    
+
     c.execute("""INSERT INTO rewards (user_id, points) 
                  VALUES (?, ?) 
                  ON CONFLICT(user_id) 
                  DO UPDATE SET points = points + ?""", 
               (user.id, points, points))
-    
+
     conn.commit()
     conn.close()
 
@@ -1278,13 +1278,13 @@ async def on_ready():
             )
             view = discord.ui.View()
             vip_button = discord.ui.Button(label="🌟 Apply for VIP", style=discord.ButtonStyle.danger)
-            
+
             async def vip_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337508682950377480:
                     await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
                 await vip_apply(interaction)
-                
+
             vip_button.callback = vip_callback
             view.add_item(vip_button)
             await vip_channel.send(embed=embed, view=view)
@@ -1300,13 +1300,13 @@ async def on_ready():
             )
             view = discord.ui.View()
             job_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.primary)
-            
+
             async def job_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337508683286052894:
                     await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
                 await apply(interaction)
-                
+
             job_button.callback = job_callback
             view.add_item(job_button)
             await job_channel.send(embed=embed, view=view)
@@ -1322,13 +1322,29 @@ async def on_ready():
             )
             view = discord.ui.View()
             redeem_button = discord.ui.Button(label="🎁 Redeem Points", style=discord.ButtonStyle.success)
-            
+
             async def redeem_callback(interaction: discord.Interaction):
-                if interaction.channel.id != 1337508683684384847:
+                if interaction.channel_id != 1337508683684384847:
                     await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
-                await redeem(interaction)
-                
+
+                # Get user points
+                conn = sqlite3.connect('orders.db')
+                c = conn.cursor()
+                c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+                result = c.fetchone()
+                points = result[0] if result else 0
+                conn.close()
+
+                embed = discord.Embed(
+                    title="🎁 Sweet Holes Rewards Redemption",
+                    description=f"You have **{points}** points available!\nChoose a reward to redeem:",
+                    color=discord.Color.gold()
+                )
+
+                view = RedeemView(points)
+                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
             redeem_button.callback = redeem_callback
             view.add_item(redeem_button)
             await redeem_channel.send(embed=embed, view=view)
@@ -1344,13 +1360,13 @@ async def on_ready():
             )
             view = discord.ui.View()
             vendor_button = discord.ui.Button(label="➕ Add Vendor Reward", style=discord.ButtonStyle.primary)
-            
+
             async def vendor_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337705856061407283:
                     await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
                 await vendor_add(interaction)
-                
+
             vendor_button.callback = vendor_callback
             view.add_item(vendor_button)
             await vendor_channel.send(embed=embed, view=view)
