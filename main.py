@@ -980,6 +980,60 @@ async def on_member_remove(member):
         embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
         await goodbye_channel.send(embed=embed)
 
+# Message XP cooldown tracking
+message_cooldowns = {}
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # Process commands if any
+    await bot.process_commands(message)
+    
+    # Check cooldown (1 minute between point rewards)
+    user_id = message.author.id
+    current_time = datetime.now()
+    if user_id in message_cooldowns:
+        if (current_time - message_cooldowns[user_id]).total_seconds() < 60:
+            return
+    
+    # Award points for activity
+    points = random.randint(1, 3)  # Random points between 1-3
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    
+    c.execute("""INSERT INTO rewards (user_id, points) 
+                 VALUES (?, ?) 
+                 ON CONFLICT(user_id) 
+                 DO UPDATE SET points = points + ?""", 
+              (user_id, points, points))
+    
+    conn.commit()
+    conn.close()
+    
+    # Update cooldown
+    message_cooldowns[user_id] = current_time
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    if user.bot:
+        return
+        
+    # Award points for reactions
+    points = 1
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    
+    c.execute("""INSERT INTO rewards (user_id, points) 
+                 VALUES (?, ?) 
+                 ON CONFLICT(user_id) 
+                 DO UPDATE SET points = points + ?""", 
+              (user.id, points, points))
+    
+    conn.commit()
+    conn.close()
+
 @bot.event
 async def on_ready():
     """Auto syncs commands and sends channel-specific messages on startup."""
