@@ -868,29 +868,7 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
         except ValueError:
             await interaction.response.send_message("❌ Points cost must be a number!", ephemeral=True)
 
-@bot.tree.command(name="vendor_add", description="Add vendor rewards to the redemption system")
-async def vendor_add(interaction: discord.Interaction):
-    # Check if user has partner role
-    if not any(role.name == "Partner" for role in interaction.user.roles):
-        await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
-        return
-
-    embed = discord.Embed(
-        title="🏪 Add Vendor Reward",
-        description="Click the button below to add a new reward to the redemption system",
-        color=discord.Color.blue()
-    )
-
-    view = discord.ui.View()
-    add_button = discord.ui.Button(label="➕ Add Reward", style=discord.ButtonStyle.primary)
-
-    async def button_callback(interaction: discord.Interaction):
-        await interaction.response.send_modal(VendorRewardModal())
-
-    add_button.callback = button_callback
-    view.add_item(add_button)
-
-    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+# Vendor add command is now handled in on_ready
 
 @bot.tree.command(name="add_points", description="Add points to a user")
 @is_admin()
