@@ -955,6 +955,32 @@ async def manual_update_loyalty(interaction: discord.Interaction):
     )
 
 @bot.event
+async def on_member_join(member):
+    """Sends a welcome message when a new member joins."""
+    welcome_channel = bot.get_channel(1337508682950377473)
+    if welcome_channel:
+        embed = discord.Embed(
+            title="👋 Welcome to Sweet Holes!",
+            description=f"Hey {member.mention}! Welcome to our sweet community! 🍩\n\nMake sure to check out our rewards program and VIP membership!",
+            color=discord.Color.gold()
+        )
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        await welcome_channel.send(embed=embed)
+
+@bot.event
+async def on_member_remove(member):
+    """Sends a goodbye message when a member leaves."""
+    goodbye_channel = bot.get_channel(1337508682950377476)
+    if goodbye_channel:
+        embed = discord.Embed(
+            title="👋 Farewell!",
+            description=f"Goodbye {member.name}! We hope to see you again soon! 🍩",
+            color=discord.Color.blue()
+        )
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        await goodbye_channel.send(embed=embed)
+
+@bot.event
 async def on_ready():
     """Auto syncs commands and sends channel-specific messages on startup."""
     try:
