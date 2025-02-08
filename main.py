@@ -844,12 +844,24 @@ class RedeemView(discord.ui.View):
         conn.commit()
         conn.close()
 
-        embed = discord.Embed(
+        # Send confirmation to user
+        user_embed = discord.Embed(
             title="🎉 Reward Redeemed!",
             description=f"Successfully redeemed **{item}** for {cost} points!\nA staff member will contact you soon!",
             color=discord.Color.green()
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=user_embed, ephemeral=True)
+
+        # Send notification to redemption log channel
+        log_channel = interaction.client.get_channel(1337712800453230643)
+        if log_channel:
+            log_embed = discord.Embed(
+                title="🎁 New Reward Redemption",
+                description=f"**User:** {interaction.user.mention}\n**Item:** {item}\n**Cost:** {cost} points",
+                color=discord.Color.gold(),
+                timestamp=datetime.now()
+            )
+            await log_channel.send(embed=log_embed)
 
 class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
     reward_name = discord.ui.TextInput(
