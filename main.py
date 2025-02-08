@@ -58,7 +58,7 @@ PICKUP_LINES = [
     "If sweetness was a crime, you’d be doing life, sugar. 😘",
     "Are you on the menu? Because I’d order you every time. 😏",
     "Do you have a map? I keep getting lost in your eyes. 🗺️",
-    "Are you a magician? Because every time I look at you, everyone else disappears. �,
+    "Are you a magician? Because every time I look at you, everyone else disappears. 💫",
     "Are you a camera? Because every time I look at you, I smile. 📷",
     "Do you have a name? Or can I call you mine? 🤔",
     "Are you a library? Because I can't find you in any of my books. 📚",
