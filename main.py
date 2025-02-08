@@ -6,16 +6,34 @@ import os
 import asyncio
 import random
 from datetime import datetime, timedelta
+from flask import Flask
+from threading import Thread
+
+app = Flask('')
+
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
 
 # Database Setup & Auto Creation
 def setup_database():
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    
+
     try:
         c.execute('BEGIN TRANSACTION')
-        
+
         # Create tables if they don't exist
         c.execute('''CREATE TABLE IF NOT EXISTS orders 
                      (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT, 
@@ -1608,7 +1626,3 @@ async def on_ready():
 # Run the bot
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 bot.run(TOKEN)
-
-from keep_alive import keep_alive
-
-keep_alive()
