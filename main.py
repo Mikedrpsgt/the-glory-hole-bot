@@ -14,7 +14,8 @@ def setup_database():
 
     # Create tables if they don't exist
     c.execute('''CREATE TABLE IF NOT EXISTS orders 
-                 (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
+                 (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT, 
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
     c.execute('''CREATE TABLE IF NOT EXISTS rewards 
                  (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
@@ -605,12 +606,12 @@ async def view_feedback(interaction: discord.Interaction):
 async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
     try:
-        response_channel = interaction.channel
+        response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
         if not response_channel:
-            await interaction.response.send_message("Error: Could not access channel!", ephemeral=True)
+            await interaction.response.send_message("Error: Could not access applications channel!", ephemeral=True)
             return
-        
-    embed = discord.Embed(
+            
+        embed = discord.Embed(
         title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
         description="Only the most based individuals may enter.\nProve your worth by clicking below.",
         color=discord.Color.purple()
