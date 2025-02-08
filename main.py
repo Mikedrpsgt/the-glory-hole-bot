@@ -652,11 +652,14 @@ async def apply(interaction: discord.Interaction):
             return
             
         embed = discord.Embed(
-        title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
-        description="Only the most based individuals may enter.\nProve your worth by clicking below.",
-        color=discord.Color.purple()
-    )
-    view = discord.ui.View()
+            title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
+            description="Only the most based individuals may enter.\nProve your worth by clicking below.",
+            color=discord.Color.purple()
+        )
+        view = discord.ui.View()
+    except Exception as e:
+        await interaction.response.send_message(f"❌ An error occurred: {str(e)}", ephemeral=True)
+        return
     
     async def apply_callback(button_interaction: discord.Interaction):
         modal = ApplicationModal(response_channel)
