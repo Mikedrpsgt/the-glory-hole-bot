@@ -47,6 +47,10 @@ FOOTER_IMAGE_URL = "https://yourhost.com/footer.png"
 
 # Loyalty Tiers & Perks
 LOYALTY_TIERS = {
+    "Flirty Bronze": 0,
+    "Sweet Silver": 50,
+    "Seductive Gold": 100
+}
 
 class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application"):
     def __init__(self, response_channel):
