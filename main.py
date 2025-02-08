@@ -47,6 +47,44 @@ FOOTER_IMAGE_URL = "https://yourhost.com/footer.png"
 
 # Loyalty Tiers & Perks
 LOYALTY_TIERS = {
+
+class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application"):
+    def __init__(self, response_channel):
+        super().__init__()
+        self.response_channel = response_channel
+
+    name = discord.ui.TextInput(
+        label="Your Name",
+        placeholder="Enter your name",
+        required=True
+    )
+    
+    age = discord.ui.TextInput(
+        label="Your Age",
+        placeholder="Enter your age",
+        required=True
+    )
+    
+    why_join = discord.ui.TextInput(
+        label="Why do you want to join?",
+        style=discord.TextStyle.long,
+        placeholder="Tell us why you'd like to join Sweet Holes VIP...",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="✨ New VIP Application",
+            color=discord.Color.gold()
+        )
+        embed.add_field(name="Applicant", value=f"<@{interaction.user.id}>", inline=False)
+        embed.add_field(name="Name", value=self.name.value, inline=True)
+        embed.add_field(name="Age", value=self.age.value, inline=True)
+        embed.add_field(name="Why Join", value=self.why_join.value, inline=False)
+        
+        await self.response_channel.send(embed=embed)
+        await interaction.response.send_message("✅ Your application has been submitted! We'll review it soon.", ephemeral=True)
+
     "Flirty Bronze": 0,
     "Sweet Silver": 50,
     "Seductive Gold": 100
@@ -641,6 +679,27 @@ async def on_ready():
         menu_channel = bot.get_channel(1337508682950377479)
         order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
+        apply_channel = bot.get_channel(1337508683286052894)
+        response_channel = bot.get_channel(1337645313279791174)
+
+        # Set up apply button in apply channel
+        if apply_channel:
+            await apply_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="💖 Apply for Sweet Holes VIP 💖",
+                description="Click the button below to submit your application!",
+                color=discord.Color.pink()
+            )
+            view = discord.ui.View()
+            
+            async def apply_callback(interaction: discord.Interaction):
+                modal = ApplicationModal(response_channel)
+                await interaction.response.send_modal(modal)
+            
+            apply_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.green)
+            apply_button.callback = apply_callback
+            view.add_item(apply_button)
+            await apply_channel.send(embed=embed, view=view)
         
         # Clear existing messages and send new ones
         if menu_channel:
