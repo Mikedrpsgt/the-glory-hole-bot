@@ -49,11 +49,11 @@ FOOTER_IMAGE_URL = "https://yourhost.com/footer.png"
 # Loyalty Tiers & Perks
 LOYALTY_TIERS = {
     "Flirty Bronze": 0,
-    "Sweet Silver": 50,
-    "Seductive Gold": 100
+    "Sweet Silver": 500,
+    "Seductive Gold": 1000
 }
 
-class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application"):
+class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes employee Application"):
     def __init__(self, response_channel):
         super().__init__()
         self.response_channel = response_channel
@@ -73,7 +73,7 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
     why_join = discord.ui.TextInput(
         label="Why do you want to join?",
         style=discord.TextStyle.long,
-        placeholder="Tell us why you'd like to join Sweet Holes VIP...",
+        placeholder="Tell us why you'd like to join Sweet Holes team...",
         required=True
     )
 
@@ -84,7 +84,7 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
                 return
                 
             embed = discord.Embed(
-                title="✨ New VIP Application",
+                title="✨ New Employee Application",
                 color=discord.Color.gold()
             )
             embed.add_field(name="Applicant", value=f"<@{interaction.user.id}>", inline=False)
