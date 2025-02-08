@@ -956,20 +956,178 @@ async def on_reaction_add(reaction, user):
 async def on_ready():
     """Auto syncs commands and initializes all commands on startup."""
     try:
-        # Set up all commands
-        @bot.tree.command(name="menu", description="Show the interactive menu")
-        async def menu(interaction: discord.Interaction):
-            if interaction.channel_id != 1337692528509456414:
-                await interaction.response.send_message("❌ This command can only be used in the menu channel!", ephemeral=True)
-                return
-            embed = discord.Embed(
-                title="🎀 Sweet Holes Interactive Menu 🎀",
-                description="Click the buttons below to interact!",
-                color=discord.Color.pink()
-            )
-            await interaction.response.send_message(embed=embed, view=MenuView(), ephemeral=True)
+        print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
+        
+        # Sync commands
+        await bot.tree.sync()
+        
+        # Start loyalty update task
+        update_loyalty.start()
 
-        @bot.tree.command(name="redeem", description="Redeem your Sweet Holes reward points")
+        # Initialize channels
+        channels = {
+            'apply': bot.get_channel(1337508683286052894),
+            'response': bot.get_channel(1337645313279791174),
+            'menu': bot.get_channel(1337692528509456414),
+            'order': bot.get_channel(1337508683286052899),
+            'tier': bot.get_channel(1337508683684384846),
+            'membership': bot.get_channel(1337508682950377480),
+            'vip': bot.get_channel(1337508682950377480),
+            'job': bot.get_channel(1337508683286052894),
+            'redeem': bot.get_channel(1337508683684384847),
+            'vendor': bot.get_channel(1337705856061407283)
+        }
+
+        # Setup database
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Create required tables
+        c.execute('''CREATE TABLE IF NOT EXISTS orders 
+                     (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, 
+                      item TEXT, quantity INTEGER, status TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS rewards
+                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS feedback
+                     (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, rating INTEGER, comment TEXT)''')
+
+        conn.commit()
+        conn.close()
+
+        # Setup channel interfaces
+        for channel_name, channel in channels.items():
+            if channel:
+                await channel.purge(limit=100)
+                
+                if channel_name == 'menu':
+                    embed = discord.Embed(
+                        title="🎀 Sweet Holes Interactive Menu 🎀",
+                        description="Click the buttons below to interact!",
+                        color=discord.Color.pink()
+                    )
+                    await channel.send(embed=embed, view=MenuView())
+                
+                elif channel_name == 'order':
+                    embed = discord.Embed(
+                        title="🍩 Sweet Holes Order System 🍩",
+                        description="What can we get for you today, sugar? 😘",
+                        color=discord.Color.pink()
+                    )
+                    await channel.send(embed=embed, view=OrderView())
+                
+                elif channel_name == 'tier':
+                    embed = discord.Embed(
+                        title="💖 Check Your VIP Status 💖",
+                        description="Click the button below to check your tier and points!",
+                        color=discord.Color.pink()
+                    )
+                    view = discord.ui.View()
+                    view.add_item(discord.ui.Button(label="💝 Check My Tier", style=discord.ButtonStyle.blurple, custom_id="check_tier"))
+                    await channel.send(embed=embed, view=view)
+                
+                elif channel_name == 'vip':
+                    embed = discord.Embed(
+                        title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
+                        description="Join our exclusive VIP program and unlock special perks!",
+                        color=discord.Color.gold()
+                    )
+                    view = discord.ui.View()
+                    vip_button = discord.ui.Button(label="🌟 Apply for VIP", style=discord.ButtonStyle.danger)
+                    
+                    async def vip_callback(interaction: discord.Interaction):
+                        if interaction.channel.id != 1337508682950377480:
+                            await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                            return
+                        response_channel = channels['response']
+                        modal = ApplicationModal(response_channel)
+                        await interaction.response.send_modal(modal)
+
+                    vip_button.callback = vip_callback
+                    view.add_item(vip_button)
+                    await channel.send(embed=embed, view=view)
+                
+                elif channel_name == 'job':
+                    embed = discord.Embed(
+                        title="💼 SWEET HOLES EMPLOYMENT 💼",
+                        description="Join our amazing team! Click below to apply.",
+                        color=discord.Color.blue()
+                    )
+                    view = discord.ui.View()
+                    job_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.primary)
+                    
+                    async def job_callback(interaction: discord.Interaction):
+                        if interaction.channel.id != 1337508683286052894:
+                            await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                            return
+                        response_channel = channels['response']
+                        modal = ApplicationModal(response_channel)
+                        await interaction.response.send_modal(modal)
+
+                    job_button.callback = job_callback
+                    view.add_item(job_button)
+                    await channel.send(embed=embed, view=view)
+                
+                elif channel_name == 'redeem':
+                    embed = discord.Embed(
+                        title="🎁 Sweet Holes Rewards Redemption",
+                        description="Click below to redeem your reward points!",
+                        color=discord.Color.gold()
+                    )
+                    view = discord.ui.View()
+                    redeem_button = discord.ui.Button(label="🎁 Redeem Points", style=discord.ButtonStyle.success)
+                    
+                    async def redeem_callback(interaction: discord.Interaction):
+                        if interaction.channel_id != 1337508683684384847:
+                            await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                            return
+                        conn = sqlite3.connect('orders.db')
+                        c = conn.cursor()
+                        c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+                        result = c.fetchone()
+                        points = result[0] if result else 0
+                        conn.close()
+                        
+                        embed = discord.Embed(
+                            title="🎁 Sweet Holes Rewards Redemption",
+                            description=f"You have **{points}** points available!\nChoose a reward to redeem:",
+                            color=discord.Color.gold()
+                        )
+                        view = RedeemView(points)
+                        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+                    redeem_button.callback = redeem_callback
+                    view.add_item(redeem_button)
+                    await channel.send(embed=embed, view=view)
+                
+                elif channel_name == 'vendor':
+                    embed = discord.Embed(
+                        title="🏪 Vendor Reward Management",
+                        description="Click below to add or manage your vendor rewards!",
+                        color=discord.Color.blue()
+                    )
+                    view = discord.ui.View()
+                    vendor_button = discord.ui.Button(label="➕ Add Vendor Reward", style=discord.ButtonStyle.primary)
+                    
+                    async def vendor_callback(interaction: discord.Interaction):
+                        if interaction.channel.id != 1337705856061407283:
+                            await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                            return
+                        if not any(role.name == "Partner" for role in interaction.user.roles):
+                            await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
+                            return
+                        modal = VendorRewardModal()
+                        await interaction.response.send_modal(modal)
+
+                    vendor_button.callback = vendor_callback
+                    view.add_item(vendor_button)
+                    await channel.send(embed=embed, view=view)
+
+    except Exception as e:
+        print(f"❌ Startup Error: {str(e)}")
         async def redeem(interaction: discord.Interaction):
             if interaction.channel_id != 1337508683684384847:
                 await interaction.response.send_message("❌ This command can only be used in the rewards redemption channel!", ephemeral=True)
