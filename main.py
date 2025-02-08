@@ -245,12 +245,14 @@ class MenuView(View):
 
             tier, points = result if result else ("Flirty Bronze", 0)
 
-        embed = discord.Embed(
-            title="💖 Your VIP Sweet Holes Card 💖",
-            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
-            color=discord.Color.pink()
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            embed = discord.Embed(
+                title="💖 Your VIP Sweet Holes Card 💖",
+                description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+                color=discord.Color.pink()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message("❌ An error occurred while checking your tier!", ephemeral=True)
 
 # --- Loyalty System ---
 @tasks.loop(hours=24)
