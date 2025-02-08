@@ -687,6 +687,10 @@ async def view_feedback(interaction: discord.Interaction):
 @bot.tree.command(name="apply", description="Apply for Sweet Holes VIP")
 async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
+    if interaction.channel.id != 1337508683286052894:  # Only allow in applications channel
+        await interaction.response.send_message("❌ Please use this command in the applications channel!", ephemeral=True)
+        return
+        
     try:
         response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
         if not response_channel:
