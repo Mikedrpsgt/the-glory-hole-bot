@@ -638,30 +638,31 @@ async def on_ready():
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
         
         # Channel IDs
-        rewards_channel = bot.get_channel(1337508682950377480)
-        orders_channel = bot.get_channel(1337508683286052899)
+        menu_channel = bot.get_channel(1337508682950377479)
+        order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
         
-        # Send menu to rewards channel
-        if rewards_channel:
+        # Clear existing messages and send new ones
+        if menu_channel:
+            await menu_channel.purge(limit=100)
             embed = discord.Embed(
                 title="🎀 Sweet Holes Interactive Menu 🎀",
                 description="Click the buttons below to interact!",
                 color=discord.Color.pink()
             )
-            await rewards_channel.send(embed=embed, view=MenuView())
+            await menu_channel.send(embed=embed, view=MenuView())
             
-        # Send order menu to orders channel
-        if orders_channel:
+        if order_channel:
+            await order_channel.purge(limit=100)
             embed = discord.Embed(
                 title="🍩 Sweet Holes Order System 🍩",
                 description="What can we get for you today, sugar? 😘",
                 color=discord.Color.pink()
             )
-            await orders_channel.send(embed=embed, view=OrderView())
+            await order_channel.send(embed=embed, view=OrderView())
             
-        # Send tier info to tier channel
         if tier_channel:
+            await tier_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💖 Check Your VIP Status 💖",
                 description="Click the button below to check your tier and points!",
