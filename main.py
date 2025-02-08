@@ -88,7 +88,6 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
         
         await self.response_channel.send(embed=embed)
         await interaction.response.send_message("✅ Your application has been submitted! We'll review it soon.", ephemeral=True)
-}
 
 # Fun Responses
 PICKUP_LINES = [
