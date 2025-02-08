@@ -425,9 +425,10 @@ async def daily(interaction: discord.Interaction):
         user_id = interaction.user.id
         bonus_points = random.randint(5, 15)
         
-        # Check if user exists in rewards table
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
+        
+        # Check if user exists in rewards table
         c.execute("SELECT last_daily FROM rewards WHERE user_id = ?", (user_id,))
         last_claim = c.fetchone()
         
@@ -437,9 +438,6 @@ async def daily(interaction: discord.Interaction):
                 await interaction.response.send_message("❌ You've already claimed your daily reward! Try again tomorrow!", ephemeral=True)
                 conn.close()
                 return
-
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
     c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
               (user_id, bonus_points, bonus_points))
     conn.commit()
@@ -633,8 +631,15 @@ async def apply(interaction: discord.Interaction):
             
         # Check bot permissions
         bot_member = interaction.guild.me
-        if not response_channel.permissions_for(bot_member).send_messages:
-            await interaction.response.send_message("Error: Bot missing permissions in response channel! Please contact an admin.", ephemeral=True)
+        required_permissions = ['send_messages', 'embed_links', 'attach_files']
+        missing_permissions = [perm for perm in required_permissions 
+                             if not getattr(response_channel.permissions_for(bot_member), perm, False)]
+        
+        if missing_permissions:
+            await interaction.response.send_message(
+                f"Error: Bot missing permissions in response channel: {', '.join(missing_permissions)}! Please contact an admin.", 
+                ephemeral=True
+            )
             return
             
         embed = discord.Embed(
