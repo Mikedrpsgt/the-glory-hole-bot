@@ -77,17 +77,25 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            title="✨ New VIP Application",
-            color=discord.Color.gold()
-        )
-        embed.add_field(name="Applicant", value=f"<@{interaction.user.id}>", inline=False)
-        embed.add_field(name="Name", value=self.name.value, inline=True)
-        embed.add_field(name="Age", value=self.age.value, inline=True)
-        embed.add_field(name="Why Join", value=self.why_join.value, inline=False)
-        
-        await self.response_channel.send(embed=embed)
-        await interaction.response.send_message("✅ Your application has been submitted! We'll review it soon.", ephemeral=True)
+        try:
+            if not self.response_channel:
+                await interaction.response.send_message("❌ Error: Application channel not found. Please contact an admin.", ephemeral=True)
+                return
+                
+            embed = discord.Embed(
+                title="✨ New VIP Application",
+                color=discord.Color.gold()
+            )
+            embed.add_field(name="Applicant", value=f"<@{interaction.user.id}>", inline=False)
+            embed.add_field(name="Name", value=self.name.value, inline=True)
+            embed.add_field(name="Age", value=self.age.value, inline=True)
+            embed.add_field(name="Why Join", value=self.why_join.value, inline=False)
+            
+            await self.response_channel.send(embed=embed)
+            await interaction.response.send_message("✅ Your application has been submitted! We'll review it soon.", ephemeral=True)
+        except Exception as e:
+            print(f"Application Error: {str(e)}")
+            await interaction.response.send_message("❌ Something went wrong with your application. Please try again!", ephemeral=True)
 
 # Fun Responses
 PICKUP_LINES = [
