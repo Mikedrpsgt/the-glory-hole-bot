@@ -611,10 +611,10 @@ async def apply(interaction: discord.Interaction):
             return
 
         embed = discord.Embed(
-        title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
-        description="Only the most based individuals may enter.\nProve your worth by clicking below.",
-        color=discord.Color.purple()
-    )
+            title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
+            description="Only the most based individuals may enter.\nProve your worth by clicking below.",
+            color=discord.Color.purple()
+        )
     view = discord.ui.View()
     
     async def apply_callback(button_interaction: discord.Interaction):
