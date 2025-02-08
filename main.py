@@ -817,6 +817,7 @@ async def on_ready():
         menu_channel = bot.get_channel(1337508682950377479)
         order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
+        membership_channel = bot.get_channel(1337508682950377480)
 
         # Set up apply button in apply channel first
         if apply_channel:
@@ -866,6 +867,15 @@ async def on_ready():
             view = discord.ui.View()
             view.add_item(discord.ui.Button(label="💝 Check My Tier", style=discord.ButtonStyle.blurple, custom_id="check_tier"))
             await tier_channel.send(embed=embed, view=view)
+            
+        if membership_channel:
+            await membership_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="💎 Sweet Holes Membership",
+                description="Welcome to our exclusive membership area!",
+                color=discord.Color.gold()
+            )
+            await membership_channel.send(embed=embed)
         
         # Verify database tables
         conn = sqlite3.connect('orders.db')
