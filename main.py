@@ -685,9 +685,9 @@ async def on_ready():
         if apply_channel:
             await apply_channel.purge(limit=100)
             embed = discord.Embed(
-                title="💖 Apply for Sweet Holes VIP 💖",
-                description="Click the button below to submit your application!",
-                color=discord.Color.pink()
+                title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
+                description="Only the most based individuals may enter.\nProve your worth by clicking below.",
+                color=discord.Color.purple()
             )
             view = discord.ui.View()
             
@@ -695,7 +695,7 @@ async def on_ready():
                 modal = ApplicationModal(response_channel)
                 await interaction.response.send_modal(modal)
             
-            apply_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.green)
+            apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
             apply_button.callback = apply_callback
             view.add_item(apply_button)
             await apply_channel.send(embed=embed, view=view)
