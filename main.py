@@ -623,13 +623,13 @@ async def view_feedback(interaction: discord.Interaction):
         )
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="apply", description="Apply for Sweet Holes VIP")
-async def apply(interaction: discord.Interaction):
-    """Shows the application button interface."""
+@bot.tree.command(name="vip_apply", description="Apply for Sweet Holes VIP Membership")
+async def vip_apply(interaction: discord.Interaction):
+    """Shows the VIP application button interface."""
     try:
         # Check if command is used in correct channel
-        if interaction.channel.id != 1337508683286052894:  # Applications channel
-            await interaction.response.send_message("❌ This command can only be used in the applications channel!", ephemeral=True)
+        if interaction.channel.id != 1337508682950377480:  # VIP Membership channel
+            await interaction.response.send_message("❌ This command can only be used in the VIP membership channel!", ephemeral=True)
             return
             
         response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
@@ -912,13 +912,13 @@ async def on_ready():
         tier_channel = bot.get_channel(1337508683684384846)
         membership_channel = bot.get_channel(1337508682950377480)
 
-        # Set up apply button in apply channel first
-        if apply_channel:
-            await apply_channel.purge(limit=100)
+        # Set up VIP application button in membership channel
+        if membership_channel:
+            await membership_channel.purge(limit=100)
             embed = discord.Embed(
-                title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
-                description="Only the most based individuals may enter.\nProve your worth by clicking below.",
-                color=discord.Color.purple()
+                title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
+                description="Join our exclusive VIP program and unlock special perks!\nApply now by clicking below.",
+                color=discord.Color.gold()
             )
             view = discord.ui.View()
             
