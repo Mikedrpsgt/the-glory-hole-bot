@@ -63,13 +63,13 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes employee Applic
         placeholder="Enter your name",
         required=True
     )
-    
+
     age = discord.ui.TextInput(
         label="Your Age",
         placeholder="Enter your age",
         required=True
     )
-    
+
     why_join = discord.ui.TextInput(
         label="Why do you want to join?",
         style=discord.TextStyle.long,
@@ -82,7 +82,7 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes employee Applic
             if not self.response_channel:
                 await interaction.response.send_message("❌ Error: Application channel not found. Please contact an admin.", ephemeral=True)
                 return
-                
+
             embed = discord.Embed(
                 title="✨ New Employee Application",
                 color=discord.Color.gold()
@@ -91,7 +91,7 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes employee Applic
             embed.add_field(name="Name", value=self.name.value, inline=True)
             embed.add_field(name="Age", value=self.age.value, inline=True)
             embed.add_field(name="Why Join", value=self.why_join.value, inline=False)
-            
+
             await self.response_channel.send(embed=embed)
             await interaction.response.send_message("✅ Your application has been submitted! We'll review it soon.", ephemeral=True)
         except Exception as e:
@@ -424,21 +424,21 @@ async def daily(interaction: discord.Interaction):
     try:
         user_id = interaction.user.id
         bonus_points = random.randint(5, 15)
-        
+
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Check if user exists in rewards table
         c.execute("SELECT last_daily FROM rewards WHERE user_id = ?", (user_id,))
         last_claim = c.fetchone()
-        
+
         if last_claim and last_claim[0]:
             last_time = datetime.strptime(last_claim[0], '%Y-%m-%d %H:%M:%S')
             if datetime.now() - last_time < timedelta(days=1):
                 await interaction.response.send_message("❌ You've already claimed your daily reward! Try again tomorrow!", ephemeral=True)
                 conn.close()
                 return
-                
+
         c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
                     VALUES (?, ?, ?) 
                     ON CONFLICT(user_id) DO UPDATE 
@@ -447,7 +447,7 @@ async def daily(interaction: discord.Interaction):
                   bonus_points, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         conn.commit()
         conn.close()
-        
+
         await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**")
     except Exception as e:
         if 'conn' in locals():
@@ -631,44 +631,44 @@ async def vip_apply(interaction: discord.Interaction):
         if interaction.channel.id != 1337508682950377480:  # VIP Membership channel
             await interaction.response.send_message("❌ This command can only be used in the VIP membership channel!", ephemeral=True)
             return
-            
-        response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
+
+        response_channel = bot.get_channel(1337646191994867772)  # Applications response channel
         if not response_channel:
-            print(f"Error: Could not access response channel ID: 1337645313279791174")
+            print(f"Error: Could not access response channel ID: 1337646191994867772")
             await interaction.response.send_message("Error: Could not access response channel! Please contact an admin.", ephemeral=True)
             return
-            
+
         # Check bot permissions
         bot_member = interaction.guild.me
         required_permissions = ['send_messages', 'embed_links', 'attach_files']
         missing_permissions = [perm for perm in required_permissions 
                              if not getattr(response_channel.permissions_for(bot_member), perm, False)]
-        
+
         if missing_permissions:
             await interaction.response.send_message(
                 f"Error: Bot missing permissions in response channel: {', '.join(missing_permissions)}! Please contact an admin.", 
                 ephemeral=True
             )
             return
-            
+
         embed = discord.Embed(
             title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
             description="Only the most based individuals may enter.\nProve your worth by clicking below.",
             color=discord.Color.purple()
         )
         view = discord.ui.View()
-        
+
         async def apply_callback(button_interaction: discord.Interaction):
             modal = ApplicationModal(response_channel)
             await button_interaction.response.send_modal(modal)
     except Exception as e:
         await interaction.response.send_message(f"❌ An error occurred: {str(e)}", ephemeral=True)
         return
-    
+
     apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
     apply_button.callback = apply_callback
     view.add_item(apply_button)
-    
+
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 @bot.tree.command(name="signup_rewards", description="Sign up for Sweet Holes rewards program")
@@ -676,25 +676,25 @@ async def signup_rewards(interaction: discord.Interaction):
     try:
         user_id = interaction.user.id
         membership_channel = bot.get_channel(1337508682950377480)
-        
+
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Check if user already exists
         c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
         existing_user = c.fetchone()
-        
+
         if existing_user:
             await interaction.response.send_message("💝 You're already enrolled in our rewards program, sweetie!", ephemeral=True)
             conn.close()
             return
-            
+
         # Add new user to rewards
         c.execute("INSERT INTO rewards (user_id, points, loyalty_tier) VALUES (?, ?, ?)", 
                  (user_id, 50, "Flirty Bronze"))
         conn.commit()
         conn.close()
-        
+
         # Send welcome message to membership channel
         welcome_embed = discord.Embed(
             title="🎉 New Sweet Heart Joined!",
@@ -702,11 +702,11 @@ async def signup_rewards(interaction: discord.Interaction):
             color=discord.Color.pink()
         )
         await membership_channel.send(embed=welcome_embed)
-        
+
         await interaction.response.send_message("✨ Welcome to Sweet Holes Rewards! You've earned 50 bonus points!", ephemeral=True)
-        
+
     except Exception as e:
-        await interaction.response.send_message("❌ Something went wrong! Please try again.", ephemeral=True)
+        await interaction.response.send_message("❌ Something went wrong! Please try again.", ephemeralTrue)
         if 'conn' in locals():
             conn.close()
 
@@ -883,27 +883,27 @@ async def on_ready():
         # Verify database integrity
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Ensure all tables exist with correct schema
         c.execute('''CREATE TABLE IF NOT EXISTS orders 
                      (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, 
                       item TEXT, quantity INTEGER, status TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-                      
+
         c.execute('''CREATE TABLE IF NOT EXISTS rewards
                      (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
                       loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)''')
-                      
+
         c.execute('''CREATE TABLE IF NOT EXISTS feedback
                      (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
                       user_id INTEGER, rating INTEGER, comment TEXT)''')
-        
+
         conn.commit()
         conn.close()
-        
+
         await bot.tree.sync()
         update_loyalty.start()
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
-        
+
         # Channel IDs
         apply_channel = bot.get_channel(1337508683286052894)
         response_channel = bot.get_channel(1337645313279791174)
@@ -921,16 +921,16 @@ async def on_ready():
                 color=discord.Color.gold()
             )
             view = discord.ui.View()
-            
+
             async def apply_callback(interaction: discord.Interaction):
                 modal = ApplicationModal(response_channel)
                 await interaction.response.send_modal(modal)
-            
+
             apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
             apply_button.callback = apply_callback
             view.add_item(apply_button)
             await apply_channel.send(embed=embed, view=view)
-        
+
         # Clear existing messages and send new ones
         if menu_channel:
             await menu_channel.purge(limit=100)
@@ -940,7 +940,7 @@ async def on_ready():
                 color=discord.Color.pink()
             )
             await menu_channel.send(embed=embed, view=MenuView())
-            
+
         if order_channel:
             await order_channel.purge(limit=100)
             embed = discord.Embed(
@@ -949,7 +949,7 @@ async def on_ready():
                 color=discord.Color.pink()
             )
             await order_channel.send(embed=embed, view=OrderView())
-            
+
         if tier_channel:
             await tier_channel.purge(limit=100)
             embed = discord.Embed(
@@ -960,7 +960,7 @@ async def on_ready():
             view = discord.ui.View()
             view.add_item(discord.ui.Button(label="💝 Check My Tier", style=discord.ButtonStyle.blurple, custom_id="check_tier"))
             await tier_channel.send(embed=embed, view=view)
-            
+
         if membership_channel:
             await membership_channel.purge(limit=100)
             embed = discord.Embed(
@@ -969,7 +969,7 @@ async def on_ready():
                 color=discord.Color.gold()
             )
             await membership_channel.send(embed=embed)
-            
+
         # Initialize redeem command in rewards channel
         redeem_channel = bot.get_channel(1337508683684384847)
         if redeem_channel:
@@ -980,7 +980,7 @@ async def on_ready():
                 color=discord.Color.gold()
             )
             await redeem_channel.send(embed=embed)
-        
+
         # Verify database tables
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
