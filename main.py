@@ -694,7 +694,14 @@ async def apply(interaction: discord.Interaction):
     try:
         response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
         if not response_channel:
-            await interaction.response.send_message("Error: Could not access applications channel!", ephemeral=True)
+            print(f"Could not access response channel ID: 1337645313279791174")
+            await interaction.response.send_message("Error: Could not access applications channel! Make sure the bot has been invited.", ephemeral=True)
+            return
+            
+        # Verify bot permissions in response channel
+        bot_member = response_channel.guild.me
+        if not response_channel.permissions_for(bot_member).send_messages:
+            await interaction.response.send_message("Error: Bot does not have permission to send messages in the applications channel!", ephemeral=True)
             return
 
         embed = discord.Embed(
