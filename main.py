@@ -762,17 +762,53 @@ class RedeemView(discord.ui.View):
         super().__init__()
         self.points = points
 
-    @discord.ui.button(label="🍩 Free Donut (500 points)", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="🍩 Any Donut (150 points)", style=discord.ButtonStyle.primary)
     async def redeem_donut(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.process_redemption(interaction, 500, "Free Donut")
+        await self.process_redemption(interaction, 150, "Any Donut")
 
-    @discord.ui.button(label="🎁 Mystery Box (1000 points)", style=discord.ButtonStyle.success)
-    async def redeem_mystery(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.process_redemption(interaction, 1000, "Mystery Box")
+    @discord.ui.button(label="🍦 Any Ice Cream (165 points)", style=discord.ButtonStyle.primary)
+    async def redeem_ice_cream(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 165, "Any Ice Cream Scoop")
 
-    @discord.ui.button(label="👑 VIP Status (2000 points)", style=discord.ButtonStyle.danger)
-    async def redeem_vip(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.process_redemption(interaction, 2000, "VIP Status")
+    @discord.ui.button(label="☕ Any Coffee (180 points)", style=discord.ButtonStyle.primary)
+    async def redeem_coffee(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 180, "Any Coffee")
+
+    @discord.ui.button(label="🥤 Any Milkshake (195 points)", style=discord.ButtonStyle.success)
+    async def redeem_milkshake(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 195, "Any Milkshake")
+
+    @discord.ui.button(label="🍪 Any Side (210 points)", style=discord.ButtonStyle.success)
+    async def redeem_side(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 210, "Any Side")
+
+    @discord.ui.button(label="🍩🍦 Any Cream Hole (225 points)", style=discord.ButtonStyle.success)
+    async def redeem_cream_hole(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 225, "Any Cream Hole")
+
+    @discord.ui.button(label="🥯 Breakfast Sammich (240 points)", style=discord.ButtonStyle.danger)
+    async def redeem_breakfast(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 240, "Any Breakfast Sammich")
+
+    @discord.ui.button(label="🍽️ Free Meal (255 points)", style=discord.ButtonStyle.danger)
+    async def redeem_meal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 255, "Free Meal Combo")
+
+    @discord.ui.button(label="☕🔥 Unlimited Coffee Week (270 points)", style=discord.ButtonStyle.danger)
+    async def redeem_coffee_week(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 270, "Week of Unlimited Coffee")
+
+    @discord.ui.button(label="🍽️ Secret Menu Item (285 points)", style=discord.ButtonStyle.danger)
+    async def redeem_secret(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 285, "VIP Secret Menu Item")
+
+    @discord.ui.button(label="🍩 Month of Desserts (300 points)", style=discord.ButtonStyle.danger)
+    async def redeem_dessert_month(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 300, "Month of Free Desserts")
+
+    @discord.ui.button(label="🎁 Vendor Reward (500 points)", style=discord.ButtonStyle.danger)
+    async def redeem_vendor(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 500, "Vendor Reward")
 
     async def process_redemption(self, interaction: discord.Interaction, cost: int, item: str):
         if self.points < cost:
