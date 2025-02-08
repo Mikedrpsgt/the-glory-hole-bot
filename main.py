@@ -1002,8 +1002,8 @@ async def remove_points(interaction: discord.Interaction, user: discord.Member, 
 @is_admin()
 async def remove_vendor_reward(interaction: discord.Interaction):
     """Remove a vendor reward from the system."""
-    if interaction.channel_id != 1337508683684384847:  # Redeem channel
-        await interaction.response.send_message("❌ This command can only be used in the rewards redemption channel!", ephemeral=True)
+    if interaction.channel_id != 1337709954336952391:  # Vendor channel
+        await interaction.response.send_message("❌ This command can only be used in the vendor management channel!", ephemeral=True)
         return
 
     try:
