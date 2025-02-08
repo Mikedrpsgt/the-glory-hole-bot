@@ -421,8 +421,22 @@ async def dare(interaction: discord.Interaction):
 @bot.tree.command(name="daily", description="Claim your daily bonus points")
 async def daily(interaction: discord.Interaction):
     """Gives a daily bonus of points."""
-    user_id = interaction.user.id
-    bonus_points = random.randint(5, 15)
+    try:
+        user_id = interaction.user.id
+        bonus_points = random.randint(5, 15)
+        
+        # Check if user exists in rewards table
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT last_daily FROM rewards WHERE user_id = ?", (user_id,))
+        last_claim = c.fetchone()
+        
+        if last_claim and last_claim[0]:
+            last_time = datetime.strptime(last_claim[0], '%Y-%m-%d %H:%M:%S')
+            if datetime.now() - last_time < timedelta(days=1):
+                await interaction.response.send_message("❌ You've already claimed your daily reward! Try again tomorrow!", ephemeral=True)
+                conn.close()
+                return
 
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
@@ -606,9 +620,21 @@ async def view_feedback(interaction: discord.Interaction):
 async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
     try:
+        # Check if command is used in correct channel
+        if interaction.channel.id != 1337508683286052894:  # Applications channel
+            await interaction.response.send_message("❌ This command can only be used in the applications channel!", ephemeral=True)
+            return
+            
         response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
         if not response_channel:
-            await interaction.response.send_message("Error: Could not access applications channel!", ephemeral=True)
+            print(f"Error: Could not access response channel ID: 1337645313279791174")
+            await interaction.response.send_message("Error: Could not access response channel! Please contact an admin.", ephemeral=True)
+            return
+            
+        # Check bot permissions
+        bot_member = interaction.guild.me
+        if not response_channel.permissions_for(bot_member).send_messages:
+            await interaction.response.send_message("Error: Bot missing permissions in response channel! Please contact an admin.", ephemeral=True)
             return
             
         embed = discord.Embed(
@@ -705,6 +731,26 @@ async def manual_update_loyalty(interaction: discord.Interaction):
 async def on_ready():
     """Auto syncs commands and sends channel-specific messages on startup."""
     try:
+        # Verify database integrity
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Ensure all tables exist with correct schema
+        c.execute('''CREATE TABLE IF NOT EXISTS orders 
+                     (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, 
+                      item TEXT, quantity INTEGER, status TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      
+        c.execute('''CREATE TABLE IF NOT EXISTS rewards
+                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)''')
+                      
+        c.execute('''CREATE TABLE IF NOT EXISTS feedback
+                     (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, rating INTEGER, comment TEXT)''')
+        
+        conn.commit()
+        conn.close()
+        
         await bot.tree.sync()
         update_loyalty.start()
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
