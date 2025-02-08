@@ -872,40 +872,6 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
 
 # Add points command is now handled in on_ready
 
-@bot.tree.command(name="remove_points", description="Remove points from a user")
-@is_admin()
-async def remove_points(interaction: discord.Interaction, user: discord.Member, points: int):
-    """Remove points from a user's balance."""
-    try:
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-
-        # Check current points
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (user.id,))
-        result = c.fetchone()
-
-        if not result:
-            await interaction.response.send_message("❌ User has no points!", ephemeral=True)
-            return
-
-        current_points = result[0]
-        if current_points < points:
-            await interaction.response.send_message("❌ User doesn't have enough points!", ephemeral=True)
-            return
-
-        c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, user.id))
-        conn.commit()
-        conn.close()
-
-        embed = discord.Embed(
-            title="✅ Points Removed",
-            description=f"Removed {points} points from {user.mention}",
-            color=discord.Color.red()
-        )
-        await interaction.response.send_message(embed=embed)
-    except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
-
 @bot.tree.command(name="remove_vendor_reward", description="Remove a vendor reward")
 @is_admin()
 async def remove_vendor_reward(interaction: discord.Interaction):
