@@ -13,25 +13,19 @@ def setup_database():
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
 
-        # Create tables if they don't exist
-        c.execute('''CREATE TABLE IF NOT EXISTS orders 
+    # Create tables if they don't exist
+    c.execute('''CREATE TABLE IF NOT EXISTS orders 
                  (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
 
-        c.execute('''CREATE TABLE IF NOT EXISTS rewards 
+    c.execute('''CREATE TABLE IF NOT EXISTS rewards 
                  (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
                   last_daily TIMESTAMP)''')
 
-        c.execute('''CREATE TABLE IF NOT EXISTS feedback 
+    c.execute('''CREATE TABLE IF NOT EXISTS feedback 
                  (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)''')
 
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        if conn:
-            conn.close()
+    conn.commit()
+    conn.close()
 
 setup_database()  # Ensures tables exist before the bot starts
 
@@ -235,24 +229,21 @@ class MenuView(View):
 
     @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
     async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
-        try:
-            user_id = interaction.user.id
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-            c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
-            result = c.fetchone()
-            conn.close()
+        user_id = interaction.user.id
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+        conn.close()
 
-            tier, points = result if result else ("Flirty Bronze", 0)
+        tier, points = result if result else ("Flirty Bronze", 0)
 
-            embed = discord.Embed(
-                title="💖 Your VIP Sweet Holes Card 💖",
-                description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
-                color=discord.Color.pink()
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-        except Exception as e:
-            await interaction.response.send_message("❌ An error occurred while checking your tier!", ephemeral=True)
+        embed = discord.Embed(
+            title="💖 Your VIP Sweet Holes Card 💖",
+            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+            color=discord.Color.pink()
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # --- Loyalty System ---
 @tasks.loop(hours=24)
@@ -339,12 +330,11 @@ async def dare(ctx):
 @bot.command()
 async def daily(ctx):
     """Gives a daily bonus of points."""
-    try:
-        user_id = ctx.author.id
-        bonus_points = random.randint(5, 15)
+    user_id = ctx.author.id
+    bonus_points = random.randint(5, 15)
 
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
     c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
               (user_id, bonus_points, bonus_points))
     conn.commit()
