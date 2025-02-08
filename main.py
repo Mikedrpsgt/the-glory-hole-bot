@@ -595,10 +595,24 @@ async def view_feedback(interaction: discord.Interaction):
 
 @bot.tree.command(name="apply", description="Apply for Sweet Holes VIP")
 async def apply(interaction: discord.Interaction):
-    """Opens the VIP application modal."""
-    response_channel = bot.get_channel(1337645313279791174)
-    modal = ApplicationModal(response_channel)
-    await interaction.response.send_modal(modal)
+    """Shows the application button interface."""
+    embed = discord.Embed(
+        title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
+        description="Only the most based individuals may enter.\nProve your worth by clicking below.",
+        color=discord.Color.purple()
+    )
+    view = discord.ui.View()
+    
+    async def apply_callback(interaction: discord.Interaction):
+        response_channel = bot.get_channel(1337645313279791174)
+        modal = ApplicationModal(response_channel)
+        await interaction.response.send_modal(modal)
+    
+    apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
+    apply_button.callback = apply_callback
+    view.add_item(apply_button)
+    
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 @bot.tree.command(name="vip_report", description="Generate VIP business report")
 @is_admin()
