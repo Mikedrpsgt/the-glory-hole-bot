@@ -926,6 +926,96 @@ async def vendor_add(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
+@bot.tree.command(name="add_points", description="Add points to a user")
+@is_admin()
+async def add_points(interaction: discord.Interaction, user: discord.Member, points: int):
+    """Add points to a user's balance."""
+    try:
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        c.execute("""INSERT INTO rewards (user_id, points) 
+                     VALUES (?, ?) 
+                     ON CONFLICT(user_id) 
+                     DO UPDATE SET points = points + ?""", 
+                  (user.id, points, points))
+        
+        conn.commit()
+        conn.close()
+        
+        embed = discord.Embed(
+            title="✅ Points Added",
+            description=f"Added {points} points to {user.mention}",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+
+@bot.tree.command(name="remove_points", description="Remove points from a user")
+@is_admin()
+async def remove_points(interaction: discord.Interaction, user: discord.Member, points: int):
+    """Remove points from a user's balance."""
+    try:
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Check current points
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (user.id,))
+        result = c.fetchone()
+        
+        if not result:
+            await interaction.response.send_message("❌ User has no points!", ephemeral=True)
+            return
+            
+        current_points = result[0]
+        if current_points < points:
+            await interaction.response.send_message("❌ User doesn't have enough points!", ephemeral=True)
+            return
+            
+        c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, user.id))
+        conn.commit()
+        conn.close()
+        
+        embed = discord.Embed(
+            title="✅ Points Removed",
+            description=f"Removed {points} points from {user.mention}",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+
+@bot.tree.command(name="remove_vendor_reward", description="Remove a vendor reward")
+@is_admin()
+async def remove_vendor_reward(interaction: discord.Interaction, reward_id: int):
+    """Remove a vendor reward from the system."""
+    try:
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Check if reward exists
+        c.execute("SELECT reward_name FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+        result = c.fetchone()
+        
+        if not result:
+            await interaction.response.send_message("❌ Reward not found!", ephemeral=True)
+            return
+            
+        reward_name = result[0]
+        c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+        conn.commit()
+        conn.close()
+        
+        embed = discord.Embed(
+            title="✅ Vendor Reward Removed",
+            description=f"Removed reward: {reward_name}",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+
 @bot.tree.command(name="update_loyalty", description="Manually update customer loyalty tiers")
 @is_admin()
 async def manual_update_loyalty(interaction: discord.Interaction):
