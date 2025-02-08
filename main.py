@@ -351,8 +351,8 @@ async def update_loyalty():
 @bot.hybrid_command(name="menu", description="Show the interactive menu")
 async def menu(ctx):
     """Shows the interactive menu with buttons."""
-    if ctx.channel.id != 1337508682950377480:  # Rewards channel
-        await ctx.send("❌ This command can only be used in the rewards channel!", ephemeral=True)
+    if ctx.channel.id != 1337692528509456414:  # Menu channel
+        await ctx.send("❌ This command can only be used in the menu channel!", ephemeral=True)
         return
     embed = discord.Embed(
         title="🎀 Sweet Holes Interactive Menu 🎀",
@@ -814,7 +814,7 @@ async def on_ready():
         # Channel IDs
         apply_channel = bot.get_channel(1337508683286052894)
         response_channel = bot.get_channel(1337645313279791174)
-        menu_channel = bot.get_channel(1337508682950377479)
+        menu_channel = bot.get_channel(1337692528509456414)
         order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
         membership_channel = bot.get_channel(1337508682950377480)
