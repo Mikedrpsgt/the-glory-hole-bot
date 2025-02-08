@@ -609,8 +609,8 @@ async def apply(interaction: discord.Interaction):
         if not response_channel:
             await interaction.response.send_message("Error: Could not access channel!", ephemeral=True)
             return
-        
-    embed = discord.Embed(
+
+        embed = discord.Embed(
         title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
         description="Only the most based individuals may enter.\nProve your worth by clicking below.",
         color=discord.Color.purple()
