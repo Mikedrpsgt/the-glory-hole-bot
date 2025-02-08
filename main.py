@@ -322,10 +322,10 @@ async def order(ctx):
     )
     await ctx.send(embed=embed, view=OrderView(), ephemeral=True)
 
-@bot.tree.command(name="my_tier", description="Check your loyalty tier")
-async def my_tier(interaction: discord.Interaction):
+@bot.command()
+async def my_tier(ctx):
     """Check your loyalty tier."""
-    user_id = interaction.user.id
+    user_id = ctx.author.id
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
     c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
@@ -336,37 +336,37 @@ async def my_tier(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="💖 Your VIP Sweet Holes Card 💖",
-        description=f"👤 **{interaction.user.display_name}**\n🏅 **Loyalty Tier:** {tier}\n🎁 **Total Points:** {points}",
+        description=f"👤 **{ctx.author.display_name}**\n🏅 **Loyalty Tier:** {tier}\n🎁 **Total Points:** {points}",
         color=discord.Color.pink()
     )
     embed.set_thumbnail(url=MAIN_LOGO_URL)
     embed.set_footer(text="Stay sweet, sugar! More rewards coming your way! 😘", icon_url=FOOTER_IMAGE_URL)
 
-    await interaction.response.send_message(embed=embed)
+    await ctx.send(embed=embed)
 
 # --- Fun Features ---
-@bot.tree.command(name="pickup", description="Get a fun, flirty pick-up line")
-async def pickup(interaction: discord.Interaction):
+@bot.command()
+async def pickup(ctx):
     """Sends a fun, flirty pick-up line."""
     line = random.choice(PICKUP_LINES)
-    await interaction.response.send_message(f"💋 **Sweet Holes Flirty Line:** {line}", ephemeral=True)
+    await ctx.send(f"💋 **Sweet Holes Flirty Line:** {line}", ephemeral=True)
 
-@bot.tree.command(name="truth", description="Get a flirty truth question")
-async def truth(interaction: discord.Interaction):
+@bot.command()
+async def truth(ctx):
     """Gives a flirty truth question."""
     question = random.choice(TRUTH_QUESTIONS)
-    await interaction.response.send_message(f"💖 **Truth:** {question}", ephemeral=True)
+    await ctx.send(f"💖 **Truth:** {question}", ephemeral=True)
 
-@bot.tree.command(name="dare", description="Get a fun dare task")
-async def dare(interaction: discord.Interaction):
+@bot.command()
+async def dare(ctx):
     """Gives a fun dare task."""
     dare = random.choice(DARE_TASKS)
-    await interaction.response.send_message(f"🔥 **Dare:** {dare}", ephemeral=True)
+    await ctx.send(f"🔥 **Dare:** {dare}", ephemeral=True)
 
-@bot.tree.command(name="daily", description="Claim your daily bonus points")
-async def daily(interaction: discord.Interaction):
+@bot.command()
+async def daily(ctx):
     """Gives a daily bonus of points."""
-    user_id = interaction.user.id
+    user_id = ctx.author.id
     bonus_points = random.randint(5, 15)
 
     conn = sqlite3.connect('orders.db')
@@ -376,7 +376,7 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
+    await ctx.send(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
 
 # --- Auto Register Commands ---
 # Admin Commands
