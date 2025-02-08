@@ -688,9 +688,9 @@ async def view_feedback(interaction: discord.Interaction):
 async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
     try:
-        response_channel = interaction.channel
+        response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
         if not response_channel:
-            await interaction.response.send_message("Error: Could not access channel!", ephemeral=True)
+            await interaction.response.send_message("Error: Could not access applications channel!", ephemeral=True)
             return
 
         embed = discord.Embed(
