@@ -12,22 +12,29 @@ from datetime import datetime, timedelta
 def setup_database():
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
+    
+    try:
+        c.execute('BEGIN TRANSACTION')
+        
+        # Create tables if they don't exist
+        c.execute('''CREATE TABLE IF NOT EXISTS orders 
+                     (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT, 
+                      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
-    # Create tables if they don't exist
-    c.execute('''CREATE TABLE IF NOT EXISTS orders 
-                 (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT, 
-                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS rewards 
+                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
+                      last_daily TIMESTAMP)''')
 
-    c.execute('''CREATE TABLE IF NOT EXISTS rewards 
-                 (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
-                  last_daily TIMESTAMP)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS feedback 
+                     (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)'''
+                  )
 
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback 
-                 (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)'''
-              )
-
-    conn.commit()
-    conn.close()
+        c.execute('COMMIT')
+    except Exception as e:
+        c.execute('ROLLBACK')
+        print(f"Database setup error: {str(e)}")
+    finally:
+        conn.close()
 
 
 setup_database()  # Ensures tables exist before the bot starts
