@@ -604,6 +604,11 @@ async def view_feedback(interaction: discord.Interaction):
 @bot.tree.command(name="apply", description="Apply for Sweet Holes VIP")
 async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
+    response_channel = await bot.fetch_channel(1337645313279791174)
+    if not response_channel:
+        await interaction.response.send_message("Error: Could not find response channel!", ephemeral=True)
+        return
+        
     embed = discord.Embed(
         title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
         description="Only the most based individuals may enter.\nProve your worth by clicking below.",
@@ -611,13 +616,9 @@ async def apply(interaction: discord.Interaction):
     )
     view = discord.ui.View()
     
-    async def apply_callback(interaction: discord.Interaction):
-        response_channel = bot.get_channel(1337645313279791174)
-        if not response_channel:
-            await interaction.response.send_message("Error: Response channel not found!", ephemeral=True)
-            return
+    async def apply_callback(button_interaction: discord.Interaction):
         modal = ApplicationModal(response_channel)
-        await interaction.response.send_modal(modal)
+        await button_interaction.response.send_modal(modal)
     
     apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
     apply_button.callback = apply_callback
