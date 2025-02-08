@@ -195,35 +195,45 @@ class MenuView(View):
 
     @discord.ui.button(label="🎁 Daily Reward", style=discord.ButtonStyle.green)
     async def daily_reward(self, interaction: discord.Interaction, button: Button):
-        user_id = interaction.user.id
+        try:
+            user_id = interaction.user.id
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
 
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
+            c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
+            result = c.fetchone()
 
-        # Check last claim time
-        c.execute("SELECT last_daily FROM rewards WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
+            current_time = datetime.now()
+            if result and result[0]:
+                last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
+                time_diff = current_time - last_claim
 
-        if result and result[0]:
-            last_claim = datetime.fromisoformat(result[0])
-            time_diff = datetime.now() - last_claim
+                if time_diff.total_seconds() < 86400:  # 24 hours in seconds
+                    hours_left = 24 - (time_diff.total_seconds() / 3600)
+                    await interaction.response.send_message(f"⏰ Hold up sweetie! You can claim again in {int(hours_left)} hours!", ephemeral=True)
+                    conn.close()
+                    return
 
-            if time_diff.total_seconds() < 86400:  # 24 hours in seconds
-                hours_left = 24 - (time_diff.total_seconds() / 3600)
-                await interaction.response.send_message(f"⏰ Hold up sweetie! You can claim again in {int(hours_left)} hours!", ephemeral=True)
+            bonus_points = random.randint(5, 15)
+            current_points = result[1] if result else 0
+
+            c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
+                        VALUES (?, ?, ?) 
+                        ON CONFLICT(user_id) DO UPDATE 
+                        SET points = points + ?, last_daily = ?""", 
+                     (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), 
+                      bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
+            conn.commit()
+            conn.close()
+
+            await interaction.response.send_message(
+                f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\nTotal points: {current_points + bonus_points}", 
+                ephemeral=True
+            )
+        except Exception as e:
+            await interaction.response.send_message("❌ Something went wrong with the daily reward. Please try again!", ephemeral=True)
+            if 'conn' in locals():
                 conn.close()
-                return
-
-        bonus_points = random.randint(5, 15)
-        c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
-                    VALUES (?, ?, datetime('now')) 
-                    ON CONFLICT(user_id) DO UPDATE 
-                    SET points = points + ?, last_daily = datetime('now')""", 
-                 (user_id, bonus_points, bonus_points))
-        conn.commit()
-        conn.close()
-
-        await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**", ephemeral=True)
 
     @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
     async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
