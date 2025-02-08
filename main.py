@@ -692,17 +692,36 @@ async def apply(interaction: discord.Interaction):
         return
         
     try:
+        # Get both channels
+        application_channel = interaction.channel
         response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
+        
         if not response_channel:
             print(f"Could not access response channel ID: 1337645313279791174")
-            await interaction.response.send_message("Error: Could not access applications channel! Make sure the bot has been invited.", ephemeral=True)
+            await interaction.response.send_message("Error: Could not access response channel! Please make sure the bot is invited to both channels.", ephemeral=True)
             return
             
-        # Verify bot permissions in response channel
-        bot_member = response_channel.guild.me
-        if not response_channel.permissions_for(bot_member).send_messages:
-            await interaction.response.send_message("Error: Bot does not have permission to send messages in the applications channel!", ephemeral=True)
-            return
+        # Verify bot permissions in both channels
+        bot_member = interaction.guild.me
+        
+        needed_permissions = [
+            "view_channel",
+            "send_messages",
+            "embed_links",
+            "attach_files",
+            "read_message_history"
+        ]
+        
+        for channel in [application_channel, response_channel]:
+            channel_perms = channel.permissions_for(bot_member)
+            missing_perms = [perm for perm in needed_permissions if not getattr(channel_perms, perm, False)]
+            
+            if missing_perms:
+                await interaction.response.send_message(
+                    f"❌ Missing permissions in {channel.mention}: {', '.join(missing_perms)}\nPlease give the bot these permissions or reinvite it with proper permissions.", 
+                    ephemeral=True
+                )
+                return
 
         embed = discord.Embed(
             title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
