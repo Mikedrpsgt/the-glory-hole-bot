@@ -870,31 +870,7 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
 
 # Vendor add command is now handled in on_ready
 
-@bot.tree.command(name="add_points", description="Add points to a user")
-@is_admin()
-async def add_points(interaction: discord.Interaction, user: discord.Member, points: int):
-    """Add points to a user's balance."""
-    try:
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-
-        c.execute("""INSERT INTO rewards (user_id, points) 
-                     VALUES (?, ?) 
-                     ON CONFLICT(user_id) 
-                     DO UPDATE SET points = points + ?""", 
-                  (user.id, points, points))
-
-        conn.commit()
-        conn.close()
-
-        embed = discord.Embed(
-            title="✅ Points Added",
-            description=f"Added {points} points to {user.mention}",
-            color=discord.Color.green()
-        )
-        await interaction.response.send_message(embed=embed)
-    except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+# Add points command is now handled in on_ready
 
 @bot.tree.command(name="remove_points", description="Remove points from a user")
 @is_admin()
