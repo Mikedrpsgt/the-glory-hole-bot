@@ -235,14 +235,15 @@ class MenuView(View):
 
     @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
     async def check_tier(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user_id = interaction.user.id
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
-        conn.close()
+        try:
+            user_id = interaction.user.id
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+            result = c.fetchone()
+            conn.close()
 
-        tier, points = result if result else ("Flirty Bronze", 0)
+            tier, points = result if result else ("Flirty Bronze", 0)
 
         embed = discord.Embed(
             title="💖 Your VIP Sweet Holes Card 💖",
