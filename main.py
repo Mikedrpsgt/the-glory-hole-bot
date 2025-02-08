@@ -916,9 +916,9 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
 
 @bot.tree.command(name="vendor_add", description="Add vendor rewards to the redemption system")
 async def vendor_add(interaction: discord.Interaction):
-    # Check if user has vendor role
-    if not any(role.name == "Vendor" for role in interaction.user.roles):
-        await interaction.response.send_message("❌ You need the Vendor role to use this command!", ephemeral=True)
+    # Check if user has partner role
+    if not any(role.name == "Partner" for role in interaction.user.roles):
+        await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
         return
 
     embed = discord.Embed(
