@@ -434,7 +434,7 @@ async def daily(interaction: discord.Interaction):
         
         if last_claim and last_claim[0]:
             last_time = datetime.strptime(last_claim[0], '%Y-%m-%d %H:%M:%S')
-            if datetime.now() - last_time < datetime.timedelta(days=1):
+            if datetime.now() - last_time < timedelta(days=1):
                 await interaction.response.send_message("❌ You've already claimed your daily reward! Try again tomorrow!", ephemeral=True)
                 conn.close()
                 return
@@ -657,13 +657,13 @@ async def apply(interaction: discord.Interaction):
             color=discord.Color.purple()
         )
         view = discord.ui.View()
+        
+        async def apply_callback(button_interaction: discord.Interaction):
+            modal = ApplicationModal(response_channel)
+            await button_interaction.response.send_modal(modal)
     except Exception as e:
         await interaction.response.send_message(f"❌ An error occurred: {str(e)}", ephemeral=True)
         return
-    
-    async def apply_callback(button_interaction: discord.Interaction):
-        modal = ApplicationModal(response_channel)
-        await button_interaction.response.send_modal(modal)
     
     apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
     apply_button.callback = apply_callback
