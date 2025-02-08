@@ -17,11 +17,11 @@ def setup_database():
         c.execute('''CREATE TABLE IF NOT EXISTS orders 
                  (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
 
-    c.execute('''CREATE TABLE IF NOT EXISTS rewards 
+        c.execute('''CREATE TABLE IF NOT EXISTS rewards 
                  (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
                   last_daily TIMESTAMP)''')
 
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback 
+        c.execute('''CREATE TABLE IF NOT EXISTS feedback 
                  (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)''')
 
         conn.commit()
@@ -336,11 +336,12 @@ async def dare(ctx):
 @bot.command()
 async def daily(ctx):
     """Gives a daily bonus of points."""
-    user_id = ctx.author.id
-    bonus_points = random.randint(5, 15)
+    try:
+        user_id = ctx.author.id
+        bonus_points = random.randint(5, 15)
 
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
     c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
               (user_id, bonus_points, bonus_points))
     conn.commit()
