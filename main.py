@@ -970,6 +970,50 @@ async def on_ready():
             )
             await membership_channel.send(embed=embed)
 
+        # Initialize VIP application button in membership channel
+        vip_channel = bot.get_channel(1337508682950377480)
+        if vip_channel:
+            await vip_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
+                description="Join our exclusive VIP program and unlock special perks!",
+                color=discord.Color.gold()
+            )
+            view = discord.ui.View()
+            vip_button = discord.ui.Button(label="🌟 Apply for VIP", style=discord.ButtonStyle.danger)
+            
+            async def vip_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337508682950377480:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    return
+                await vip_apply(interaction)
+                
+            vip_button.callback = vip_callback
+            view.add_item(vip_button)
+            await vip_channel.send(embed=embed, view=view)
+
+        # Initialize job application button
+        job_channel = bot.get_channel(1337508683286052894)
+        if job_channel:
+            await job_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="💼 SWEET HOLES EMPLOYMENT 💼",
+                description="Join our amazing team! Click below to apply.",
+                color=discord.Color.blue()
+            )
+            view = discord.ui.View()
+            job_button = discord.ui.Button(label="📝 Apply Now", style=discord.ButtonStyle.primary)
+            
+            async def job_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337508683286052894:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    return
+                await apply(interaction)
+                
+            job_button.callback = job_callback
+            view.add_item(job_button)
+            await job_channel.send(embed=embed, view=view)
+
         # Initialize redeem command in rewards channel
         redeem_channel = bot.get_channel(1337508683684384847)
         if redeem_channel:
@@ -979,7 +1023,18 @@ async def on_ready():
                 description="Click below to redeem your reward points!",
                 color=discord.Color.gold()
             )
-            await redeem_channel.send(embed=embed)
+            view = discord.ui.View()
+            redeem_button = discord.ui.Button(label="🎁 Redeem Points", style=discord.ButtonStyle.success)
+            
+            async def redeem_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337508683684384847:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    return
+                await redeem(interaction)
+                
+            redeem_button.callback = redeem_callback
+            view.add_item(redeem_button)
+            await redeem_channel.send(embed=embed, view=view)
 
         # Verify database tables
         conn = sqlite3.connect('orders.db')
