@@ -9,8 +9,9 @@ from datetime import datetime
 
 # Database Setup & Auto Creation
 def setup_database():
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
+    try:
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
 
     # Create tables if they don't exist
     c.execute('''CREATE TABLE IF NOT EXISTS orders 
@@ -108,12 +109,13 @@ class OrderView(View):
 
     @discord.ui.button(label="📦 Check Status", style=discord.ButtonStyle.blurple)
     async def check_status(self, interaction: discord.Interaction, button: Button):
-        user_id = interaction.user.id
-        conn = sqlite3.connect('orders.db')
-        c = conn.cursor()
-        c.execute("SELECT order_id, item, quantity, status FROM orders WHERE user_id = ? ORDER BY order_id DESC LIMIT 5", (user_id,))
-        orders = c.fetchall()
-        conn.close()
+        try:
+            user_id = interaction.user.id
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute("SELECT order_id, item, quantity, status FROM orders WHERE user_id = ? ORDER BY order_id DESC LIMIT 5", (user_id,))
+            orders = c.fetchall()
+            conn.close()
 
         if not orders:
             await interaction.response.send_message("💔 No orders found, sweetie! Time to treat yourself? 😘", ephemeral=True)
