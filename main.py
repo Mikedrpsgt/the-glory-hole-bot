@@ -453,7 +453,6 @@ async def daily(interaction: discord.Interaction):
         if 'conn' in locals():
             conn.close()
         await interaction.response.send_message("❌ Something went wrong! Please try again.", ephemeral=True)
-        return
 
 # --- Auto Register Commands ---
 # Admin Commands
