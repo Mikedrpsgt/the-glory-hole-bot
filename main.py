@@ -604,10 +604,11 @@ async def view_feedback(interaction: discord.Interaction):
 @bot.tree.command(name="apply", description="Apply for Sweet Holes VIP")
 async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
-    response_channel = await bot.fetch_channel(1337645313279791174)
-    if not response_channel:
-        await interaction.response.send_message("Error: Could not find response channel!", ephemeral=True)
-        return
+    try:
+        response_channel = interaction.channel
+        if not response_channel:
+            await interaction.response.send_message("Error: Could not access channel!", ephemeral=True)
+            return
         
     embed = discord.Embed(
         title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
