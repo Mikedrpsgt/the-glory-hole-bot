@@ -13,8 +13,8 @@ def setup_database():
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
 
-    # Create tables if they don't exist
-    c.execute('''CREATE TABLE IF NOT EXISTS orders 
+        # Create tables if they don't exist
+        c.execute('''CREATE TABLE IF NOT EXISTS orders 
                  (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT)''')
 
     c.execute('''CREATE TABLE IF NOT EXISTS rewards 
@@ -24,8 +24,14 @@ def setup_database():
     c.execute('''CREATE TABLE IF NOT EXISTS feedback 
                  (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)''')
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 setup_database()  # Ensures tables exist before the bot starts
 
