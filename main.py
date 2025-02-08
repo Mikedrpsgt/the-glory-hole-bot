@@ -453,8 +453,7 @@ async def daily(interaction: discord.Interaction):
         if 'conn' in locals():
             conn.close()
         await interaction.response.send_message("❌ Something went wrong! Please try again.", ephemeral=True)
-
-    await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
+        return
 
 # --- Auto Register Commands ---
 # Admin Commands
