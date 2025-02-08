@@ -806,9 +806,32 @@ class RedeemView(discord.ui.View):
     async def redeem_dessert_month(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.process_redemption(interaction, 300, "Month of Free Desserts")
 
-    @discord.ui.button(label="🎁 Vendor Reward (500 points)", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="🎁 Vendor Rewards", style=discord.ButtonStyle.danger)
     async def redeem_vendor(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.process_redemption(interaction, 500, "Vendor Reward")
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM vendor_rewards")
+        rewards = c.fetchall()
+        conn.close()
+        
+        if not rewards:
+            await interaction.response.send_message("❌ No vendor rewards available!", ephemeral=True)
+            return
+            
+        embed = discord.Embed(
+            title="🏪 Available Vendor Rewards",
+            description="Choose a reward to redeem:",
+            color=discord.Color.gold()
+        )
+        
+        for reward in rewards:
+            embed.add_field(
+                name=f"{reward[2]} ({reward[3]} points)",
+                value=reward[4],
+                inline=False
+            )
+            
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def process_redemption(self, interaction: discord.Interaction, cost: int, item: str):
         if self.points < cost:
@@ -828,25 +851,80 @@ class RedeemView(discord.ui.View):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="add_vendor", description="Add a new vendor to rewards program")
-@is_admin()
-async def add_vendor(interaction: discord.Interaction, vendor_name: str, points_rate: int):
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-
-    c.execute('''CREATE TABLE IF NOT EXISTS vendors 
-                 (vendor_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  name TEXT, points_rate INTEGER)''')
-
-    c.execute("INSERT INTO vendors (name, points_rate) VALUES (?, ?)", 
-              (vendor_name, points_rate))
-    conn.commit()
-    conn.close()
-
-    await interaction.response.send_message(
-        f"✅ Added vendor: {vendor_name} (Points Rate: {points_rate})",
-        ephemeral=True
+class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
+    reward_name = discord.ui.TextInput(
+        label="Reward Name",
+        placeholder="Enter the reward name",
+        required=True
     )
+    
+    points_cost = discord.ui.TextInput(
+        label="Points Cost",
+        placeholder="Enter points required",
+        required=True
+    )
+    
+    description = discord.ui.TextInput(
+        label="Description",
+        style=discord.TextStyle.long,
+        placeholder="Describe the reward...",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            points = int(self.points_cost.value)
+            
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            
+            # Create vendor rewards table if it doesn't exist
+            c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
+                        (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         vendor_id INTEGER,
+                         reward_name TEXT,
+                         points_cost INTEGER,
+                         description TEXT)''')
+            
+            c.execute("INSERT INTO vendor_rewards (vendor_id, reward_name, points_cost, description) VALUES (?, ?, ?, ?)",
+                     (interaction.user.id, self.reward_name.value, points, self.description.value))
+            
+            conn.commit()
+            conn.close()
+            
+            embed = discord.Embed(
+                title="✅ Vendor Reward Added",
+                description=f"**{self.reward_name.value}**\nCost: {points} points\n{self.description.value}",
+                color=discord.Color.green()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            
+        except ValueError:
+            await interaction.response.send_message("❌ Points cost must be a number!", ephemeral=True)
+
+@bot.tree.command(name="vendor_add", description="Add vendor rewards to the redemption system")
+async def vendor_add(interaction: discord.Interaction):
+    # Check if user has vendor role
+    if not any(role.name == "Vendor" for role in interaction.user.roles):
+        await interaction.response.send_message("❌ You need the Vendor role to use this command!", ephemeral=True)
+        return
+        
+    embed = discord.Embed(
+        title="🏪 Add Vendor Reward",
+        description="Click the button below to add a new reward to the redemption system",
+        color=discord.Color.blue()
+    )
+    
+    view = discord.ui.View()
+    add_button = discord.ui.Button(label="➕ Add Reward", style=discord.ButtonStyle.primary)
+    
+    async def button_callback(interaction: discord.Interaction):
+        await interaction.response.send_modal(VendorRewardModal())
+        
+    add_button.callback = button_callback
+    view.add_item(add_button)
+    
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 @bot.tree.command(name="update_loyalty", description="Manually update customer loyalty tiers")
 @is_admin()
