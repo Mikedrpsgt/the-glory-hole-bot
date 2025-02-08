@@ -988,31 +988,68 @@ async def remove_points(interaction: discord.Interaction, user: discord.Member, 
 
 @bot.tree.command(name="remove_vendor_reward", description="Remove a vendor reward")
 @is_admin()
-async def remove_vendor_reward(interaction: discord.Interaction, reward_id: int):
+async def remove_vendor_reward(interaction: discord.Interaction):
     """Remove a vendor reward from the system."""
+    if interaction.channel_id != 1337508683684384847:  # Redeem channel
+        await interaction.response.send_message("❌ This command can only be used in the rewards redemption channel!", ephemeral=True)
+        return
+
     try:
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
         
-        # Check if reward exists
-        c.execute("SELECT reward_name FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
-        result = c.fetchone()
+        # Get all rewards for display
+        c.execute("SELECT reward_id, reward_name, points_cost FROM vendor_rewards")
+        rewards = c.fetchall()
         
-        if not result:
-            await interaction.response.send_message("❌ Reward not found!", ephemeral=True)
+        if not rewards:
+            await interaction.response.send_message("❌ No vendor rewards found!", ephemeral=True)
             return
             
-        reward_name = result[0]
-        c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
-        conn.commit()
-        conn.close()
+        # Create dropdown menu
+        class RewardSelect(discord.ui.Select):
+            def __init__(self):
+                options = [
+                    discord.SelectOption(
+                        label=f"{reward[1]} ({reward[2]} points)",
+                        value=str(reward[0]),
+                        description=f"ID: {reward[0]}"
+                    ) for reward in rewards
+                ]
+                super().__init__(
+                    placeholder="Select a reward to remove...",
+                    options=options
+                )
+
+            async def callback(self, interaction: discord.Interaction):
+                reward_id = int(self.values[0])
+                
+                conn = sqlite3.connect('orders.db')
+                c = conn.cursor()
+                c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+                conn.commit()
+                conn.close()
+                
+                embed = discord.Embed(
+                    title="✅ Vendor Reward Removed",
+                    description=f"Successfully removed reward ID: {reward_id}",
+                    color=discord.Color.red()
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        # Create view with dropdown
+        view = discord.ui.View()
+        view.add_item(RewardSelect())
         
         embed = discord.Embed(
-            title="✅ Vendor Reward Removed",
-            description=f"Removed reward: {reward_name}",
-            color=discord.Color.red()
+            title="🗑️ Remove Vendor Reward",
+            description="Select a reward to remove from the system:",
+            color=discord.Color.blue()
         )
-        await interaction.response.send_message(embed=embed)
+        
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        conn.close()
+        
     except Exception as e:
         await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
 
