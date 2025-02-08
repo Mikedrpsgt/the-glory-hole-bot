@@ -612,7 +612,7 @@ async def apply(interaction: discord.Interaction):
     view = discord.ui.View()
     
     async def apply_callback(interaction: discord.Interaction):
-        response_channel = interaction.guild.get_channel(1337645313279791174)
+        response_channel = bot.get_channel(1337645313279791174)
         if not response_channel:
             await interaction.response.send_message("Error: Response channel not found!", ephemeral=True)
             return
