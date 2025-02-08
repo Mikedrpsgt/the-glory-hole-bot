@@ -305,6 +305,9 @@ async def update_loyalty():
 @bot.hybrid_command(name="menu", description="Show the interactive menu")
 async def menu(ctx):
     """Shows the interactive menu with buttons."""
+    if ctx.channel.id != 1337508682950377480:  # Rewards channel
+        await ctx.send("❌ This command can only be used in the rewards channel!", ephemeral=True)
+        return
     embed = discord.Embed(
         title="🎀 Sweet Holes Interactive Menu 🎀",
         description="Click the buttons below to interact!",
@@ -315,6 +318,9 @@ async def menu(ctx):
 @bot.hybrid_command(name="order", description="Show the order menu")
 async def order(ctx):
     """Shows the order menu with buttons."""
+    if ctx.channel.id != 1337508683286052899:  # Orders channel
+        await ctx.send("❌ This command can only be used in the orders channel!", ephemeral=True)
+        return
     embed = discord.Embed(
         title="🍩 Sweet Holes Order System 🍩",
         description="What can we get for you today, sugar? 😘",
@@ -324,6 +330,9 @@ async def order(ctx):
 
 @bot.tree.command(name="my_tier", description="Check your loyalty tier")
 async def my_tier(interaction: discord.Interaction):
+    if interaction.channel_id != 1337508683684384846:  # Check tier channel
+        await interaction.response.send_message("❌ This command can only be used in the check tier channel!", ephemeral=True)
+        return
     """Check your loyalty tier."""
     user_id = interaction.user.id
     conn = sqlite3.connect('orders.db')
