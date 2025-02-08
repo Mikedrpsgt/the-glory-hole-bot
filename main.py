@@ -709,7 +709,7 @@ async def vip_report(interaction: discord.Interaction):
     embed.add_field(name="Items Sold", value=str(daily_items), inline=True)
     embed.add_field(name="Total VIP Members", value=str(total_vip), inline=True)
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed)
 
 class RedeemView(discord.ui.View):
     def __init__(self, points):
