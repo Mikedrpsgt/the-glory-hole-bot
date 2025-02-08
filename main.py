@@ -5,7 +5,7 @@ import sqlite3
 import os
 import asyncio
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Database Setup & Auto Creation
 def setup_database():
@@ -434,14 +434,25 @@ async def daily(interaction: discord.Interaction):
         
         if last_claim and last_claim[0]:
             last_time = datetime.strptime(last_claim[0], '%Y-%m-%d %H:%M:%S')
-            if datetime.now() - last_time < timedelta(days=1):
+            if datetime.now() - last_time < datetime.timedelta(days=1):
                 await interaction.response.send_message("❌ You've already claimed your daily reward! Try again tomorrow!", ephemeral=True)
                 conn.close()
                 return
-    c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
-              (user_id, bonus_points, bonus_points))
-    conn.commit()
-    conn.close()
+                
+        c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
+                    VALUES (?, ?, ?) 
+                    ON CONFLICT(user_id) DO UPDATE 
+                    SET points = points + ?, last_daily = ?""",
+                 (user_id, bonus_points, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                  bonus_points, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        conn.commit()
+        conn.close()
+        
+        await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**")
+    except Exception as e:
+        if 'conn' in locals():
+            conn.close()
+        await interaction.response.send_message("❌ Something went wrong! Please try again.", ephemeral=True)
 
     await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
 
