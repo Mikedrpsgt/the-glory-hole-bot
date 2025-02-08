@@ -711,28 +711,6 @@ async def vip_report(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="redeem", description="Redeem your Sweet Holes reward points")
-async def redeem(interaction: discord.Interaction):
-    if interaction.channel_id != 1337508683684384847:
-        await interaction.response.send_message("❌ This command can only be used in the rewards redemption channel!", ephemeral=True)
-        return
-
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
-    result = c.fetchone()
-    points = result[0] if result else 0
-    conn.close()
-
-    embed = discord.Embed(
-        title="🎁 Sweet Holes Rewards Redemption",
-        description=f"You have **{points}** points available!\nChoose a reward to redeem:",
-        color=discord.Color.gold()
-    )
-
-    view = RedeemView(points)
-    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
 class RedeemView(discord.ui.View):
     def __init__(self, points):
         super().__init__()
