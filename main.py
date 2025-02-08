@@ -1175,8 +1175,65 @@ async def on_reaction_add(reaction, user):
 
 @bot.event
 async def on_ready():
-    """Auto syncs commands and sends channel-specific messages on startup."""
+    """Auto syncs commands and initializes all commands on startup."""
     try:
+        # Set up all commands
+        @bot.tree.command(name="menu", description="Show the interactive menu")
+        async def menu(interaction: discord.Interaction):
+            if interaction.channel_id != 1337692528509456414:
+                await interaction.response.send_message("❌ This command can only be used in the menu channel!", ephemeral=True)
+                return
+            embed = discord.Embed(
+                title="🎀 Sweet Holes Interactive Menu 🎀",
+                description="Click the buttons below to interact!",
+                color=discord.Color.pink()
+            )
+            await interaction.response.send_message(embed=embed, view=MenuView(), ephemeral=True)
+
+        @bot.tree.command(name="redeem", description="Redeem your Sweet Holes reward points")
+        async def redeem(interaction: discord.Interaction):
+            if interaction.channel_id != 1337508683684384847:
+                await interaction.response.send_message("❌ This command can only be used in the rewards redemption channel!", ephemeral=True)
+                return
+            await process_redemption(interaction)
+
+        @bot.tree.command(name="vendor_add", description="Add vendor rewards to the redemption system")
+        async def vendor_add(interaction: discord.Interaction):
+            if not any(role.name == "Partner" for role in interaction.user.roles):
+                await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
+                return
+            await show_vendor_add_menu(interaction)
+
+        @bot.tree.command(name="add_points", description="Add points to a user")
+        @is_admin()
+        async def add_points(interaction: discord.Interaction, user: discord.Member, points: int):
+            await process_add_points(interaction, user, points)
+
+        @bot.tree.command(name="remove_points", description="Remove points from a user")
+        @is_admin()
+        async def remove_points(interaction: discord.Interaction, user: discord.Member, points: int):
+            await process_remove_points(interaction, user, points)
+
+        @bot.tree.command(name="remove_vendor_reward", description="Remove a vendor reward")
+        @is_admin()
+        async def remove_vendor_reward(interaction: discord.Interaction):
+            if interaction.channel_id != 1337709954336952391:
+                await interaction.response.send_message("❌ This command can only be used in the vendor management channel!", ephemeral=True)
+                return
+            await process_remove_vendor_reward(interaction)
+
+        @bot.tree.command(name="update_loyalty", description="Manually update customer loyalty tiers")
+        @is_admin()
+        async def manual_update_loyalty(interaction: discord.Interaction):
+            await process_loyalty_update(interaction)
+
+        @bot.tree.command(name="vip_apply", description="Apply for Sweet Holes VIP Membership")
+        async def vip_apply(interaction: discord.Interaction):
+            if interaction.channel_id != 1337508682950377480:
+                await interaction.response.send_message("❌ This command can only be used in the VIP membership channel!", ephemeral=True)
+                return
+            await process_vip_application(interaction)
+
         # Verify database integrity
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
