@@ -675,13 +675,13 @@ async def on_ready():
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
         
         # Channel IDs
+        apply_channel = bot.get_channel(1337508683286052894)
+        response_channel = bot.get_channel(1337645313279791174)
         menu_channel = bot.get_channel(1337508682950377479)
         order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
-        apply_channel = bot.get_channel(1337508683286052894)
-        response_channel = bot.get_channel(1337645313279791174)
 
-        # Set up apply button in apply channel
+        # Set up apply button in apply channel first
         if apply_channel:
             await apply_channel.purge(limit=100)
             embed = discord.Embed(
