@@ -1114,6 +1114,28 @@ async def on_ready():
             view.add_item(redeem_button)
             await redeem_channel.send(embed=embed, view=view)
 
+        # Initialize vendor command in vendor channel
+        vendor_channel = bot.get_channel(1337705856061407283)
+        if vendor_channel:
+            await vendor_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="🏪 Vendor Reward Management",
+                description="Click below to add or manage your vendor rewards!",
+                color=discord.Color.blue()
+            )
+            view = discord.ui.View()
+            vendor_button = discord.ui.Button(label="➕ Add Vendor Reward", style=discord.ButtonStyle.primary)
+            
+            async def vendor_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337705856061407283:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    return
+                await vendor_add(interaction)
+                
+            vendor_button.callback = vendor_callback
+            view.add_item(vendor_button)
+            await vendor_channel.send(embed=embed, view=view)
+
         # Verify database tables
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
