@@ -735,6 +735,63 @@ async def vip_report(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="redeem", description="Redeem your Sweet Holes reward points")
+async def redeem(interaction: discord.Interaction):
+    if interaction.channel_id != 1337508683684384847:
+        await interaction.response.send_message("❌ This command can only be used in the rewards redemption channel!", ephemeral=True)
+        return
+
+    conn = sqlite3.connect('orders.db')
+    c = conn.cursor()
+    c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+    result = c.fetchone()
+    points = result[0] if result else 0
+    conn.close()
+
+    embed = discord.Embed(
+        title="🎁 Sweet Holes Rewards Redemption",
+        description=f"You have **{points}** points available!\nChoose a reward to redeem:",
+        color=discord.Color.gold()
+    )
+
+    view = RedeemView(points)
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+class RedeemView(discord.ui.View):
+    def __init__(self, points):
+        super().__init__()
+        self.points = points
+
+    @discord.ui.button(label="🍩 Free Donut (500 points)", style=discord.ButtonStyle.primary)
+    async def redeem_donut(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 500, "Free Donut")
+
+    @discord.ui.button(label="🎁 Mystery Box (1000 points)", style=discord.ButtonStyle.success)
+    async def redeem_mystery(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 1000, "Mystery Box")
+
+    @discord.ui.button(label="👑 VIP Status (2000 points)", style=discord.ButtonStyle.danger)
+    async def redeem_vip(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.process_redemption(interaction, 2000, "VIP Status")
+
+    async def process_redemption(self, interaction: discord.Interaction, cost: int, item: str):
+        if self.points < cost:
+            await interaction.response.send_message(f"❌ Not enough points! You need {cost} points for {item}.", ephemeral=True)
+            return
+
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (cost, interaction.user.id))
+        conn.commit()
+        conn.close()
+
+        embed = discord.Embed(
+            title="🎉 Reward Redeemed!",
+            description=f"Successfully redeemed **{item}** for {cost} points!\nA staff member will contact you soon!",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="add_vendor", description="Add a new vendor to rewards program")
 @is_admin()
 async def add_vendor(interaction: discord.Interaction, vendor_name: str, points_rate: int):
