@@ -628,11 +628,11 @@ async def apply(interaction: discord.Interaction):
     """Shows the application button interface."""
     try:
         # Check if command is used in correct channel
-        if interaction.channel.id != 1337508682950377480:  # VIP Applications channel
-            await interaction.response.send_message("❌ This command can only be used in the VIP applications channel!", ephemeral=True)
+        if interaction.channel.id != 1337508683286052894:  # Applications channel
+            await interaction.response.send_message("❌ This command can only be used in the applications channel!", ephemeral=True)
             return
             
-        response_channel = bot.get_channel(1337645313279791174)  # VIP Applications response channel
+        response_channel = bot.get_channel(1337645313279791174)  # Applications response channel
         if not response_channel:
             print(f"Error: Could not access response channel ID: 1337645313279791174")
             await interaction.response.send_message("Error: Could not access response channel! Please contact an admin.", ephemeral=True)
@@ -905,8 +905,8 @@ async def on_ready():
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
         
         # Channel IDs
-        apply_channel = bot.get_channel(1337508682950377480)  # VIP Applications channel
-        response_channel = bot.get_channel(1337645313279791174)  # VIP Applications response channel
+        apply_channel = bot.get_channel(1337508683286052894)
+        response_channel = bot.get_channel(1337645313279791174)
         menu_channel = bot.get_channel(1337692528509456414)
         order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
