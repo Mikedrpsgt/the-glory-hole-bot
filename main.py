@@ -872,34 +872,6 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
 
 # Add points command is now handled in on_ready
 
-@bot.tree.command(name="update_loyalty", description="Manually update customer loyalty tiers")
-@is_admin()
-async def manual_update_loyalty(interaction: discord.Interaction):
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-
-    c.execute("SELECT user_id, points FROM rewards")
-    users = c.fetchall()
-    updated = 0
-
-    for user_id, points in users:
-        new_tier = "Flirty Bronze"
-        for tier, min_points in LOYALTY_TIERS.items():
-            if points >= min_points:
-                new_tier = tier
-
-        c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", 
-                  (new_tier, user_id))
-        updated += 1
-
-    conn.commit()
-    conn.close()
-
-    await interaction.response.send_message(
-        f"✅ Updated loyalty tiers for {updated} users", 
-        ephemeral=True
-    )
-
 @bot.event
 async def on_member_join(member):
     """Sends a welcome message when a new member joins."""
