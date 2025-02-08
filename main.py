@@ -623,9 +623,22 @@ async def manual_update_loyalty(interaction: discord.Interaction):
 @bot.event
 async def on_ready():
     """Auto syncs commands on startup."""
-    await bot.tree.sync()
-    update_loyalty.start()
-    print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
+    try:
+        await bot.tree.sync()
+        update_loyalty.start()
+        print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
+        
+        # Verify database tables
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        tables = ['orders', 'rewards', 'feedback']
+        for table in tables:
+            c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+            if not c.fetchone():
+                print(f"⚠️ Warning: Table '{table}' not found!")
+        conn.close()
+    except Exception as e:
+        print(f"❌ Startup Error: {str(e)}")
 
 # Run the bot
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
