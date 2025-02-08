@@ -62,13 +62,13 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
         placeholder="Enter your name",
         required=True
     )
-    
+
     age = discord.ui.TextInput(
         label="Your Age",
         placeholder="Enter your age",
         required=True
     )
-    
+
     why_join = discord.ui.TextInput(
         label="Why do you want to join?",
         style=discord.TextStyle.long,
@@ -81,7 +81,7 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
             if not self.response_channel:
                 await interaction.response.send_message("❌ Error: Application channel not found. Please contact an admin.", ephemeral=True)
                 return
-                
+
             embed = discord.Embed(
                 title="✨ New VIP Application",
                 color=discord.Color.gold()
@@ -90,7 +90,7 @@ class ApplicationModal(discord.ui.Modal, title="💖 Sweet Holes VIP Application
             embed.add_field(name="Name", value=self.name.value, inline=True)
             embed.add_field(name="Age", value=self.age.value, inline=True)
             embed.add_field(name="Why Join", value=self.why_join.value, inline=False)
-            
+
             await self.response_channel.send(embed=embed)
             await interaction.response.send_message("✅ Your application has been submitted! We'll review it soon.", ephemeral=True)
         except Exception as e:
@@ -184,8 +184,13 @@ class OrderView(View):
         user_id = interaction.user.id
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        c.execute("SELECT order_id, item, quantity, status FROM orders WHERE user_id = ? ORDER BY order_id DESC LIMIT 5", (user_id,))
-        orders = c.fetchall()
+        try:
+            c.execute("SELECT order_id, item, quantity, status FROM orders WHERE user_id = ? ORDER BY order_id DESC LIMIT 5", (user_id,))
+            orders = c.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+            return
         conn.close()
 
         if not orders:
@@ -215,19 +220,29 @@ class OrderView(View):
                     order_id = int(self.order_id.value)
                     conn = sqlite3.connect('orders.db')
                     c = conn.cursor()
-                    c.execute("SELECT status FROM orders WHERE order_id = ? AND user_id = ?", 
-                            (order_id, interaction.user.id))
-                    order = c.fetchone()
+                    try:
+                        c.execute("SELECT status FROM orders WHERE order_id = ? AND user_id = ?", 
+                                (order_id, interaction.user.id))
+                        order = c.fetchone()
+                    except sqlite3.Error as e:
+                        print(f"Database error: {e}")
+                        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+                        return
 
                     if order:
                         if order[0] == 'Pending':
-                            c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", 
-                                    (order_id, interaction.user.id))
-                            conn.commit()
-                            await interaction.response.send_message(
-                                f"💝 Order #{order_id} cancelled, darling!", 
-                                ephemeral=True
-                            )
+                            try:
+                                c.execute("DELETE FROM orders WHERE order_id = ? AND user_id = ?", 
+                                        (order_id, interaction.user.id))
+                                conn.commit()
+                                await interaction.response.send_message(
+                                    f"💝 Order #{order_id} cancelled, darling!", 
+                                    ephemeral=True
+                                )
+                            except sqlite3.Error as e:
+                                print(f"Database error: {e}")
+                                await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+                                return
                         else:
                             await interaction.response.send_message(
                                 "❌ Sorry sweetie, you can only cancel pending orders!", 
@@ -273,8 +288,13 @@ class MenuView(View):
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
 
-            c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
-            result = c.fetchone()
+            try:
+                c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
+                result = c.fetchone()
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+                await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+                return
 
             current_time = datetime.now()
             if result and result[0]:
@@ -290,13 +310,18 @@ class MenuView(View):
             bonus_points = random.randint(5, 15)
             current_points = result[1] if result else 0
 
-            c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
-                        VALUES (?, ?, ?) 
-                        ON CONFLICT(user_id) DO UPDATE 
-                        SET points = points + ?, last_daily = ?""", 
-                     (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), 
-                      bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
-            conn.commit()
+            try:
+                c.execute("""INSERT INTO rewards (user_id, points, last_daily) 
+                            VALUES (?, ?, ?) 
+                            ON CONFLICT(user_id) DO UPDATE 
+                            SET points = points + ?, last_daily = ?""", 
+                         (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), 
+                          bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
+                conn.commit()
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+                await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+                return
             conn.close()
 
             await interaction.response.send_message(
@@ -313,8 +338,13 @@ class MenuView(View):
         user_id = interaction.user.id
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
-        result = c.fetchone()
+        try:
+            c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+            result = c.fetchone()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+            return
         conn.close()
 
         tier, points = result if result else ("Flirty Bronze", 0)
@@ -333,8 +363,12 @@ async def update_loyalty():
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
 
-    c.execute("SELECT user_id, points FROM rewards")
-    users = c.fetchall()
+    try:
+        c.execute("SELECT user_id, points FROM rewards")
+        users = c.fetchall()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return
 
     for user_id, points in users:
         new_tier = "Flirty Bronze"
@@ -342,7 +376,11 @@ async def update_loyalty():
             if points >= min_points:
                 new_tier = tier
 
-        c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", (new_tier, user_id))
+        try:
+            c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", (new_tier, user_id))
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            continue
 
     conn.commit()
     conn.close()
@@ -382,8 +420,13 @@ async def my_tier(interaction: discord.Interaction):
     user_id = interaction.user.id
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
-    result = c.fetchone()
+    try:
+        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
     conn.close()
 
     tier, points = result if result else ("Flirty Bronze", 0)
@@ -425,9 +468,14 @@ async def daily(interaction: discord.Interaction):
 
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
-              (user_id, bonus_points, bonus_points))
-    conn.commit()
+    try:
+        c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?", 
+                  (user_id, bonus_points, bonus_points))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
     conn.close()
 
     await interaction.response.send_message(f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!** Keep coming back for more treats! 🍩")
@@ -461,8 +509,13 @@ class AdminView(View):
             return
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
-        orders = c.fetchall()
+        try:
+            c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
+            orders = c.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+            return
         conn.close()
 
         embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
@@ -495,8 +548,13 @@ class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
-            conn.commit()
+            try:
+                c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
+                conn.commit()
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+                await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+                return
             conn.close()
 
             await interaction.response.send_message(f"✅ Order #{order_id} status updated to: {status}", ephemeral=True)
@@ -524,9 +582,14 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
-                      (user_id, points, points))
-            conn.commit()
+            try:
+                c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
+                          (user_id, points, points))
+                conn.commit()
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+                await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+                return
             conn.close()
 
             await interaction.response.send_message(f"✅ Added {points} points to user {user_id}", ephemeral=True)
@@ -549,8 +612,13 @@ async def admin(ctx):
 async def update_order(interaction: discord.Interaction, order_id: int, status: str):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
-    conn.commit()
+    try:
+        c.execute("UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
     conn.close()
     await interaction.response.send_message(f"✅ Order #{order_id} status updated to: {status}")
 
@@ -559,9 +627,14 @@ async def update_order(interaction: discord.Interaction, order_id: int, status: 
 async def give_points(interaction: discord.Interaction, user_id: int, points: int):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
-              (user_id, points, points))
-    conn.commit()
+    try:
+        c.execute("INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
+                  (user_id, points, points))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
     conn.close()
     await interaction.response.send_message(f"✅ Added {points} points to user {user_id}")
 
@@ -570,8 +643,13 @@ async def give_points(interaction: discord.Interaction, user_id: int, points: in
 async def view_all_orders(interaction: discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
-    orders = c.fetchall()
+    try:
+        c.execute("SELECT * FROM orders ORDER BY order_id DESC LIMIT 10")
+        orders = c.fetchall()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
     conn.close()
 
     embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
@@ -588,8 +666,13 @@ async def view_all_orders(interaction: discord.Interaction):
 async def view_feedback(interaction: discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
-    c.execute("SELECT * FROM feedback ORDER BY feedback_id DESC LIMIT 5")
-    reviews = c.fetchall()
+    try:
+        c.execute("SELECT * FROM feedback ORDER BY feedback_id DESC LIMIT 5")
+        reviews = c.fetchall()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
     conn.close()
 
     embed = discord.Embed(title="💖 Customer Reviews", color=discord.Color.pink())
@@ -615,36 +698,45 @@ async def apply(interaction: discord.Interaction):
             description="Only the most based individuals may enter.\nProve your worth by clicking below.",
             color=discord.Color.purple()
         )
-        
+
         view = discord.ui.View()
-        
+
         async def apply_callback(button_interaction: discord.Interaction):
             modal = ApplicationModal(response_channel)
             await button_interaction.response.send_modal(modal)
-        
+
         apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
         apply_button.callback = apply_callback
         view.add_item(apply_button)
-    
-    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+    except Exception as e:
+        print(f"Error in /apply command: {e}")
+        await interaction.response.send_message("An error occurred. Please try again later.", ephemeral=True)
+
 
 @bot.tree.command(name="vip_report", description="Generate VIP business report")
 @is_admin()
 async def vip_report(interaction: discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
+    try:
+        # Get today's orders
+        c.execute("SELECT COUNT(*), SUM(quantity) FROM orders WHERE date(datetime('now')) = date('now') ")
+        orders_data = c.fetchone()
+        daily_orders = orders_data[0] or 0
+        daily_items = orders_data[1] or 0
 
-    # Get today's orders
-    c.execute("SELECT COUNT(*), SUM(quantity) FROM orders WHERE date(datetime('now'))")
-    orders_data = c.fetchone()
-    daily_orders = orders_data[0] or 0
-    daily_items = orders_data[1] or 0
+        # Get point redemptions
+        c.execute("SELECT COUNT(*) FROM rewards WHERE points > 0")
+        total_vip = c.fetchone()[0] or 0
 
-    # Get point redemptions
-    c.execute("SELECT COUNT(*) FROM rewards WHERE points > 0")
-    total_vip = c.fetchone()[0] or 0
-
-    conn.close()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
+    finally:
+        conn.close()
 
     embed = discord.Embed(title="📊 VIP Business Report", color=discord.Color.gold())
     embed.add_field(name="Daily Orders", value=str(daily_orders), inline=True)
@@ -659,14 +751,20 @@ async def add_vendor(interaction: discord.Interaction, vendor_name: str, points_
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
 
-    c.execute('''CREATE TABLE IF NOT EXISTS vendors 
-                 (vendor_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  name TEXT, points_rate INTEGER)''')
+    try:
+        c.execute('''CREATE TABLE IF NOT EXISTS vendors 
+                     (vendor_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      name TEXT, points_rate INTEGER)''')
 
-    c.execute("INSERT INTO vendors (name, points_rate) VALUES (?, ?)", 
-              (vendor_name, points_rate))
-    conn.commit()
-    conn.close()
+        c.execute("INSERT INTO vendors (name, points_rate) VALUES (?, ?)", 
+                  (vendor_name, points_rate))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
+    finally:
+        conn.close()
 
     await interaction.response.send_message(
         f"✅ Added vendor: {vendor_name} (Points Rate: {points_rate})",
@@ -679,22 +777,28 @@ async def manual_update_loyalty(interaction: discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
 
-    c.execute("SELECT user_id, points FROM rewards")
-    users = c.fetchall()
-    updated = 0
+    try:
+        c.execute("SELECT user_id, points FROM rewards")
+        users = c.fetchall()
+        updated = 0
 
-    for user_id, points in users:
-        new_tier = "Flirty Bronze"
-        for tier, min_points in LOYALTY_TIERS.items():
-            if points >= min_points:
-                new_tier = tier
+        for user_id, points in users:
+            new_tier = "Flirty Bronze"
+            for tier, min_points in LOYALTY_TIERS.items():
+                if points >= min_points:
+                    new_tier = tier
 
-        c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", 
-                  (new_tier, user_id))
-        updated += 1
+            c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?", 
+                      (new_tier, user_id))
+            updated += 1
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        await interaction.response.send_message("❌ A database error occurred", ephemeral=True)
+        return
+    finally:
+        conn.close()
 
     await interaction.response.send_message(
         f"✅ Updated loyalty tiers for {updated} users", 
@@ -708,7 +812,7 @@ async def on_ready():
         await bot.tree.sync()
         update_loyalty.start()
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
-        
+
         # Channel IDs
         apply_channel = bot.get_channel(1337508683286052894)
         response_channel = bot.get_channel(1337645313279791174)
@@ -725,16 +829,16 @@ async def on_ready():
                 color=discord.Color.purple()
             )
             view = discord.ui.View()
-            
+
             async def apply_callback(interaction: discord.Interaction):
                 modal = ApplicationModal(response_channel)
                 await interaction.response.send_modal(modal)
-            
+
             apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH", style=discord.ButtonStyle.danger)
             apply_button.callback = apply_callback
             view.add_item(apply_button)
             await apply_channel.send(embed=embed, view=view)
-        
+
         # Clear existing messages and send new ones
         if menu_channel:
             await menu_channel.purge(limit=100)
@@ -744,7 +848,7 @@ async def on_ready():
                 color=discord.Color.pink()
             )
             await menu_channel.send(embed=embed, view=MenuView())
-            
+
         if order_channel:
             await order_channel.purge(limit=100)
             embed = discord.Embed(
@@ -753,7 +857,7 @@ async def on_ready():
                 color=discord.Color.pink()
             )
             await order_channel.send(embed=embed, view=OrderView())
-            
+
         if tier_channel:
             await tier_channel.purge(limit=100)
             embed = discord.Embed(
@@ -764,7 +868,7 @@ async def on_ready():
             view = discord.ui.View()
             view.add_item(discord.ui.Button(label="💝 Check My Tier", style=discord.ButtonStyle.blurple, custom_id="check_tier"))
             await tier_channel.send(embed=embed, view=view)
-        
+
         # Verify database tables
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
