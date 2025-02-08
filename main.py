@@ -56,17 +56,45 @@ LOYALTY_TIERS = {
 PICKUP_LINES = [
     "Are you a donut? Because I’m totally glazed over you. 😉",
     "If sweetness was a crime, you’d be doing life, sugar. 😘",
-    "Are you on the menu? Because I’d order you every time. 😏"
+    "Are you on the menu? Because I’d order you every time. 😏",
+    "Do you have a map? I keep getting lost in your eyes. 🗺️",
+    "Are you a magician? Because every time I look at you, everyone else disappears. �,
+    "Are you a camera? Because every time I look at you, I smile. 📷",
+    "Do you have a name? Or can I call you mine? 🤔",
+    "Are you a library? Because I can't find you in any of my books. 📚",
+    "Do you have a talent? Or can I borrow your camera lens? 📸",
+    "Are you a bank? Because I can't help you with your money. 💰",
+    "Do you have a hobby? Or can I borrow your camera lens? 📸",
+    "Are you a ghost? Because I'm feeling spooky tonight. 👻",
+    "Do you have a name? Or can I call you mine? 🤔",
+    "Are you a camera? Because every time I look at you, I smile. 📷",
+    "Do you have a name? Or can I call you mine? 🤔",
+    "Are you a library? Because I can't find you in any of my books. 📚",
+    "Do you have a talent? Or can I borrow your camera lens? 📸",
+    "Are you a bank? Because I can't help you with your money. 💰",
+    "Do you have a hobby? Or can I borrow your camera lens? 📸",
+    "Are you a ghost? Because I'm feeling spooky tonight. 👻"
 ]
 
 TRUTH_QUESTIONS = [
     "What's the sweetest thing someone has done for you? 🍯",
-    "What’s your biggest guilty pleasure? (Besides me, obviously.) 😉"
+    "What’s your biggest guilty pleasure? (Besides me, obviously.) 😉",
+    "What’s the most embarrassing thing you’ve ever done? 😬",
+    "What’s the most childish thing you still do? 😜",
+    "What’s the most embarrassing thing you’ve ever done in front of your crush? 😳",
+
 ]
 
 DARE_TASKS = [
     "Send a 💋 emoji to the last person who ordered a donut. 😘",
-    "Change your name to 'Sugar Daddy/Mommy' for 10 minutes. 🔥"
+    "Change your name to 'Sugar Daddy/Mommy' for 10 minutes. 🔥",
+    "Send a 🍕 emoji to the last person who ordered a pizza. 🍕",
+    "Change your name to 'Sweetie' for 10 minutes. 💖",
+    "Send a 🍦 emoji to the last person who ordered a cupcake. 🍦",
+    "Change your name to 'Sweetie' for 10 minutes. 💖",
+    "Send a 🍦 emoji to the last person who ordered a cupcake. 🍦",
+    "Change your name to 'Sweetie' for 10 minutes. 💖",
+    "Send a 🍦 emoji to the last person who ordered a cupcake. 🍦",
 ]
 
 # --- Order System ---
