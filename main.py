@@ -671,6 +671,45 @@ async def apply(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
+@bot.tree.command(name="signup_rewards", description="Sign up for Sweet Holes rewards program")
+async def signup_rewards(interaction: discord.Interaction):
+    try:
+        user_id = interaction.user.id
+        membership_channel = bot.get_channel(1337508682950377480)
+        
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Check if user already exists
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
+        existing_user = c.fetchone()
+        
+        if existing_user:
+            await interaction.response.send_message("💝 You're already enrolled in our rewards program, sweetie!", ephemeral=True)
+            conn.close()
+            return
+            
+        # Add new user to rewards
+        c.execute("INSERT INTO rewards (user_id, points, loyalty_tier) VALUES (?, ?, ?)", 
+                 (user_id, 50, "Flirty Bronze"))
+        conn.commit()
+        conn.close()
+        
+        # Send welcome message to membership channel
+        welcome_embed = discord.Embed(
+            title="🎉 New Sweet Heart Joined!",
+            description=f"Welcome <@{user_id}> to our VIP Rewards Program!\nStarting with 50 bonus points! 💖",
+            color=discord.Color.pink()
+        )
+        await membership_channel.send(embed=welcome_embed)
+        
+        await interaction.response.send_message("✨ Welcome to Sweet Holes Rewards! You've earned 50 bonus points!", ephemeral=True)
+        
+    except Exception as e:
+        await interaction.response.send_message("❌ Something went wrong! Please try again.", ephemeral=True)
+        if 'conn' in locals():
+            conn.close()
+
 @bot.tree.command(name="vip_report", description="Generate VIP business report")
 @is_admin()
 async def vip_report(interaction: discord.Interaction):
