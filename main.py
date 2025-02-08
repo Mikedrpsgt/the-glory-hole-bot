@@ -969,6 +969,17 @@ async def on_ready():
                 color=discord.Color.gold()
             )
             await membership_channel.send(embed=embed)
+            
+        # Initialize redeem command in rewards channel
+        redeem_channel = bot.get_channel(1337508683684384847)
+        if redeem_channel:
+            await redeem_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="🎁 Sweet Holes Rewards Redemption",
+                description="Click below to redeem your reward points!",
+                color=discord.Color.gold()
+            )
+            await redeem_channel.send(embed=embed)
         
         # Verify database tables
         conn = sqlite3.connect('orders.db')
