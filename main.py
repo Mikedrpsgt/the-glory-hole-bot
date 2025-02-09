@@ -1596,7 +1596,7 @@ async def on_ready():
                             def __init__(self):
                                 super().__init__(timeout=None)
 
-                            @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success)
+                            @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success, custom_id="add_points_persistent")
                             async def add_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                                 if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
@@ -1604,7 +1604,7 @@ async def on_ready():
                                 modal = GivePointsModal()
                                 await interaction.response.send_modal(modal)
 
-                            @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger)
+                            @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger, custom_id="remove_points_persistent")
                             async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                                 if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
