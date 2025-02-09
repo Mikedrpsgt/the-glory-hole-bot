@@ -179,7 +179,7 @@ DARE_TASKS = [
 class OrderView(View):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)  # Make the view persistent
 
     class OrderModal(discord.ui.Modal, title="🍩 Place Your Order"):
         order_input = discord.ui.TextInput(
@@ -200,6 +200,7 @@ class OrderView(View):
                 order_id = c.lastrowid
                 conn.close()
 
+                # Send confirmation to user
                 embed = discord.Embed(
                     title="✅ Order Placed, Sweetheart!",
                     description=
@@ -207,7 +208,17 @@ class OrderView(View):
                     color=discord.Color.pink())
                 await interaction.response.send_message(embed=embed,
                                                         ephemeral=True)
+                
+                # Send notification to staff channel
+                staff_channel = interaction.client.get_channel(1337712800453230643)
+                if staff_channel:
+                    staff_embed = discord.Embed(
+                        title="🔔 New Order!",
+                        description=f"**Order ID:** `{order_id}`\n**Customer:** {interaction.user.mention}\n🍩 **Order:** {order_text}",
+                        color=discord.Color.green())
+                    await staff_channel.send(embed=staff_embed)
             except Exception as e:
+                print(f"Order Error: {str(e)}")
                 await interaction.response.send_message(
                     "❌ Oops! Something went wrong with your order. Please try again!",
                     ephemeral=True)
