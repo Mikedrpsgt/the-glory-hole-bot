@@ -1509,34 +1509,40 @@ async def on_ready():
                     await channel.send(embed=embed, view=view)
 
                 elif channel_name == 'vendor':
-                    embed = discord.Embed(
-                        title="🏪 Vendor Reward Management",
-                        description=
-                        "Click below to add or manage your vendor rewards!",
-                        color=discord.Color.blue())
-                    view = discord.ui.View()
-                    vendor_button = discord.ui.Button(
-                        label="➕ Add Vendor Reward",
-                        style=discord.ButtonStyle.primary)
-
-                    async def vendor_callback(
-                            interaction: discord.Interaction):
-                        if interaction.channel.id != 1337705856061407283:
-                            await interaction.response.send_message(
-                                "❌ Wrong channel!", ephemeral=True)
-                            return
-                        if not any(role.name == "Partner"
-                                   for role in interaction.user.roles):
-                            await interaction.response.send_message(
-                                "❌ You need the Partner role to use this command!",
-                                ephemeral=True)
-                            return
-                        modal = VendorRewardModal()
-                        await interaction.response.send_modal(modal)
-
-                    vendor_button.callback = vendor_callback
-                    view.add_item(vendor_button)
-                    await channel.send(embed=embed, view=view)
+                    # Initialize vendor management in the specified channel
+                    vendor_management_channel = bot.get_channel(1337709954336952391)
+                    if vendor_management_channel:
+                        await vendor_management_channel.purge(limit=100)
+                        embed = discord.Embed(
+                            title="🏪 Vendor Reward Management",
+                            description="Click below to manage your vendor rewards!",
+                            color=discord.Color.blue())
+                        
+                        view = discord.ui.View(timeout=None)  # Make the view persistent
+                        
+                        add_button = discord.ui.Button(label="➕ Add Reward", style=discord.ButtonStyle.primary)
+                        remove_button = discord.ui.Button(label="🗑️ Remove Reward", style=discord.ButtonStyle.danger)
+                        
+                        async def add_callback(interaction: discord.Interaction):
+                            if not any(role.name == "Partner" for role in interaction.user.roles):
+                                await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                                return
+                            modal = VendorRewardModal()
+                            await interaction.response.send_modal(modal)
+                            
+                        async def remove_callback(interaction: discord.Interaction):
+                            if not any(role.name == "Partner" for role in interaction.user.roles):
+                                await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                                return
+                            modal = RemoveVendorRewardModal()
+                            await interaction.response.send_modal(modal)
+                        
+                        add_button.callback = add_callback
+                        remove_button.callback = remove_callback
+                        
+                        view.add_item(add_button)
+                        view.add_item(remove_button)
+                        await vendor_management_channel.send(embed=embed, view=view)
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
