@@ -622,11 +622,11 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             # Get all guild members and their names
             member_names = {m.name.lower(): m for m in interaction.guild.members}
             member_display_names = {m.display_name.lower(): m for m in interaction.guild.members}
-            
+
             # Try to find the member by name or display name
             input_name = self.username.value.lower()
             member = member_display_names.get(input_name) or member_names.get(input_name)
-            
+
             if not member:
                 # If member not found, show available names
                 available_names = sorted(set(name.title() for name in member_names.keys() | member_display_names.keys()))
@@ -1563,7 +1563,7 @@ async def on_ready():
                     async def job_callback(interaction: discord.Interaction):
                         if interaction.channel.id != 1337508683286052894:
                             await interaction.response.send_message(
-                                "❌ Wrong channel!", ephemeral=True)
+"❌ Wrong channel!", ephemeral=True)
                             return
                         response_channel = channels['response']
                         modal = ApplicationModal(response_channel)
@@ -1993,7 +1993,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keepalive import keep_alive
+from keep_alive import keep_alive
 keep_alive()  # This starts the Flask server in a separate thread
 
 # Then continue with bot setup and execution
