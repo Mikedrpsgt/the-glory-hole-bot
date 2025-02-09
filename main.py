@@ -1120,6 +1120,80 @@ class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
         except Exception as e:
             await interaction.response.send_message("❌ An error occurred while submitting your suggestion.", ephemeral=True)
 
+class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
+    complaint = discord.ui.TextInput(
+        label="Your Complaint",
+        style=discord.TextStyle.long,
+        placeholder="Please describe your complaint in detail...",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute('''CREATE TABLE IF NOT EXISTS complaints
+                        (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         user_id INTEGER,
+                         complaint TEXT,
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+            c.execute("INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
+                     (interaction.user.id, self.complaint.value))
+            conn.commit()
+            conn.close()
+
+            # Send to staff channel
+            staff_channel = interaction.client.get_channel(1337712800453230643)
+            if staff_channel:
+                embed = discord.Embed(
+                    title="⚠️ New Complaint Filed",
+                    description=f"From: {interaction.user.mention}\n\n{self.complaint.value}",
+                    color=discord.Color.red(),
+                    timestamp=datetime.now()
+                )
+                await staff_channel.send(embed=embed)
+
+            await interaction.response.send_message("✅ Your complaint has been filed and will be reviewed by staff.", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message("❌ An error occurred while filing your complaint.", ephemeral=True)
+
+class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
+    suggestion = discord.ui.TextInput(
+        label="Your Suggestion",
+        style=discord.TextStyle.long,
+        placeholder="Share your ideas with us...",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute('''CREATE TABLE IF NOT EXISTS suggestions
+                        (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         user_id INTEGER,
+                         suggestion TEXT,
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+            c.execute("INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
+                     (interaction.user.id, self.suggestion.value))
+            conn.commit()
+            conn.close()
+
+            # Send to staff channel
+            staff_channel = interaction.client.get_channel(1337712800453230643)
+            if staff_channel:
+                embed = discord.Embed(
+                    title="💡 New Suggestion Received",
+                    description=f"From: {interaction.user.mention}\n\n{self.suggestion.value}",
+                    color=discord.Color.green(),
+                    timestamp=datetime.now()
+                )
+                await staff_channel.send(embed=embed)
+
+            await interaction.response.send_message("✅ Thank you for your suggestion!", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message("❌ An error occurred while submitting your suggestion.", ephemeral=True)
+
 class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Reward"):
     reward_id = discord.ui.TextInput(
         label="Reward ID",
@@ -1675,6 +1749,48 @@ async def on_ready():
         # Clear existing messages and send new ones
         if menu_channel:
             await menu_channel.purge(limit=100)
+            # Initialize suggestion channel
+            suggestion_channel = bot.get_channel(1337706421545996399)
+            if suggestion_channel:
+                embed = discord.Embed(
+                    title="💡 Make a Suggestion",
+                    description="Have an idea to make Sweet Holes even better? Click below!",
+                    color=discord.Color.green())
+                view = discord.ui.View()
+                suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
+                
+                async def suggest_callback(interaction: discord.Interaction):
+                    if interaction.channel_id != 1337706421545996399:
+                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                        return
+                    modal = SuggestionModal()
+                    await interaction.response.send_modal(modal)
+                
+                suggest_button.callback = suggest_callback
+                view.add_item(suggest_button)
+                await suggestion_channel.send(embed=embed, view=view)
+            
+            # Initialize complaint channel
+            complaint_channel = bot.get_channel(1337706481755095100)
+            if complaint_channel:
+                embed = discord.Embed(
+                    title="📝 File a Complaint",
+                    description="Having an issue? Let us know below.",
+                    color=discord.Color.red())
+                view = discord.ui.View()
+                complaint_button = discord.ui.Button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
+                
+                async def complaint_callback(interaction: discord.Interaction):
+                    if interaction.channel_id != 1337706481755095100:
+                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                        return
+                    modal = ComplaintModal()
+                    await interaction.response.send_modal(modal)
+                
+                complaint_button.callback = complaint_callback
+                view.add_item(complaint_button)
+                await complaint_channel.send(embed=embed, view=view)
+
             # Initialize suggestion channel
             suggestion_channel = bot.get_channel(1337706421545996399)
             if suggestion_channel:
