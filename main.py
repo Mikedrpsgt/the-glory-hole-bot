@@ -1297,6 +1297,16 @@ async def vendor_remove(interaction: discord.Interaction):
     modal = RemoveVendorRewardModal()
     await interaction.response.send_modal(modal)
 
+@bot.tree.command(name="suggestion", description="Make a suggestion to improve Sweet Holes")
+async def suggestion(interaction: discord.Interaction):
+    """Submit a suggestion through slash command"""
+    if interaction.channel_id != 1337508683286052895:
+        await interaction.response.send_message("❌ Please use this command in the suggestions channel!", ephemeral=True)
+        return
+    
+    modal = SuggestionModal()
+    await interaction.response.send_modal(modal)
+
 # Add points command is now handled in on_ready
 
 
