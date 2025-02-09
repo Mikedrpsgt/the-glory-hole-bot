@@ -1922,11 +1922,11 @@ async def on_ready():
         print(f"❌ Startup Error: {str(e)}")
 
 
-# Start the keep_alive server first
+# Import and start the keep_alive server first
 from keepalive import keep_alive
+keep_alive()  # This starts the Flask server in a separate thread
 
-# Initialize and start the Flask server in a separate thread
-keep_alive()
+# Then continue with bot setup and execution
 
 # Then run the bot with the token
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
