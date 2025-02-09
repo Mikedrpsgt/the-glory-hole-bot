@@ -94,7 +94,7 @@ LOYALTY_TIERS = {
 
 
 class ApplicationModal(discord.ui.Modal,
-                       title="💖 Sweet Holes employee Application"):
+                       title="💖 Sweet Holes VIP Application"):
 
     def __init__(self, response_channel):
         super().__init__()
