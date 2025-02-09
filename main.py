@@ -784,7 +784,8 @@ async def view_feedback(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="vip_apply",
-                  description="Apply for Sweet Holes VIP Membership")async def vip_apply(interaction: discord.Interaction):
+                  description="Apply for Sweet Holes VIP Membership")
+async def vip_apply(interaction: discord.Interaction):
     """Shows the VIP application button interface."""
     try:
         # Check if command is used in correct channel
