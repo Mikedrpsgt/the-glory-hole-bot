@@ -1120,6 +1120,27 @@ async def on_reaction_add(reaction, user):
     conn.close()
 
 
+@bot.tree.command(name="git_pull", description="Pull latest changes from GitHub repository")
+@is_admin()
+async def git_pull(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer(ephemeral=True)
+        
+        # Execute git pull
+        import subprocess
+        process = subprocess.Popen(['git', 'pull'], 
+                                 stdout=subprocess.PIPE, 
+                                 stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        
+        if process.returncode == 0:
+            await interaction.followup.send("✅ Successfully pulled latest changes!", ephemeral=True)
+        else:
+            error_msg = stderr.decode('utf-8')
+            await interaction.followup.send(f"❌ Failed to pull changes: {error_msg}", ephemeral=True)
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error executing git pull: {str(e)}", ephemeral=True)
+
 @bot.event
 async def on_ready():
     """Auto syncs commands and initializes all commands on startup."""
