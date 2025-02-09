@@ -348,6 +348,18 @@ async def update_loyalty():
     """Upgrades users based on points."""
     conn = sqlite3.connect('orders.db')
 
+class SuggestionView(View):
+    def __init__(self):
+        super().__init__(timeout=None)  # Make the view persistent
+        
+    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
+    async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.channel_id != 1337508683286052895:
+            await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
+            return
+        modal = SuggestionModal()
+        await interaction.response.send_modal(modal)
+
 class ComplaintView(View):
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
@@ -1565,31 +1577,14 @@ async def on_ready():
                     await channel.send(embed=embed, view=complaint_view)
 
                 elif channel_name == 'suggestions':
-                    # Get suggestions channel directly
                     suggestions_channel = bot.get_channel(1337508683286052895)
                     if suggestions_channel:
-                        try:
-                            await suggestions_channel.purge(limit=100)
-                            embed = discord.Embed(
-                                title="💡 Make a Suggestion",
-                                description="Have an idea to make Sweet Holes even better? Share it with us!",
-                                color=discord.Color.green())
-                            
-                            class SuggestionButtonView(View):
-                                def __init__(self):
-                                    super().__init__(timeout=None)
-                                    
-                                @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
-                                async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                    if interaction.channel_id != 1337508683286052895:
-                                        await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
-                                        return
-                                    modal = SuggestionModal()
-                                    await interaction.response.send_modal(modal)
-                            
-                            await suggestions_channel.send(embed=embed, view=SuggestionButtonView())
-                        except Exception as e:
-                            print(f"Error setting up suggestions button: {e}")
+                        await suggestions_channel.purge(limit=100)
+                        embed = discord.Embed(
+                            title="💡 Make a Suggestion",
+                            description="Have an idea to make Sweet Holes even better? Share it with us!",
+                            color=discord.Color.green())
+                        await suggestions_channel.send(embed=embed, view=SuggestionView())
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
