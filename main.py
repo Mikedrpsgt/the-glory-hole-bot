@@ -320,11 +320,6 @@ class MenuView(View):
     def __init__(self):
         super().__init__()
 
-    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
-    async def make_suggestion(self, interaction: discord.Interaction, button: Button):
-        modal = SuggestionModal()
-        await interaction.response.send_modal(modal)
-
     @discord.ui.button(label="💋 Flirt", style=discord.ButtonStyle.danger)
     async def flirt(self, interaction: discord.Interaction, button: Button):
         line = random.choice(PICKUP_LINES)
