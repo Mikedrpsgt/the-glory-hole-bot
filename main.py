@@ -1045,12 +1045,16 @@ async def on_member_join(member):
     welcome_channel = bot.get_channel(1337508682950377473)
     if welcome_channel:
         embed = discord.Embed(
-            title="👋 Welcome to Sweet Holes!",
+            title="💝 Welcome to Sweet Holes! 🍩",
             description=
-            f"Hey {member.mention}! Welcome to our sweet community! 🍩\n\nMake sure to check out our rewards program and VIP membership!",
+            f"Hey {member.mention}! Welcome to our sweet community!\n\n"
+            f"🎁 Make sure to check out:\n"
+            f"• Our rewards program\n"
+            f"• VIP membership\n"
+            f"• Daily bonuses",
             color=discord.Color.gold())
-        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.
-                            default_avatar.url)
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        embed.set_footer(text="We're excited to have you here! 💖")
         await welcome_channel.send(embed=embed)
 
 
@@ -1060,12 +1064,14 @@ async def on_member_remove(member):
     goodbye_channel = bot.get_channel(1337508682950377476)
     if goodbye_channel:
         embed = discord.Embed(
-            title="👋 Farewell!",
+            title="👋 See You Soon!",
             description=
-            f"Goodbye {member.name}! We hope to see you again soon! 🍩",
+            f"Goodbye {member.name}!\n"
+            f"Thanks for being part of our sweet community.\n"
+            f"You're always welcome back! 🍩",
             color=discord.Color.blue())
-        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.
-                            default_avatar.url)
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        embed.set_footer(text="Until next time! 💝")
         await goodbye_channel.send(embed=embed)
 
 
