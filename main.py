@@ -351,7 +351,7 @@ async def update_loyalty():
 class SuggestionView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
-        
+
     @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
     async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.channel_id != 1337508683286052895:
@@ -363,7 +363,7 @@ class SuggestionView(discord.ui.View):
 class ComplaintView(View):
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
-        
+
     @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
     async def file_complaint(self, interaction: discord.Interaction, button: Button):
         modal = ComplaintModal()
@@ -794,7 +794,7 @@ async def signup_rewards(interaction: discord.Interaction):
 @bot.tree.command(name="vip_report",
                   description="Generate VIP business report")
 @is_admin()
-async def vip_report(interaction: discord.Interaction):
+async def vip_report(interaction:discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
 
@@ -1360,7 +1360,8 @@ async def on_ready():
             'job': bot.get_channel(1337508683286052894),
             'redeem': bot.get_channel(1337508683684384847),
             'vendor': bot.get_channel(1337705856061407283),
-            'complaints': bot.get_channel(1337644894558097408)
+            'complaints': bot.get_channel(1337644894558097408),
+            'suggestions': bot.get_channel(1337508683286052895)
         }
 
         # Setup database
@@ -1390,6 +1391,11 @@ async def on_ready():
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
                       user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
+        c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
+                     (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)''')
+
+
         conn.commit()
         conn.close()
 
@@ -1399,11 +1405,16 @@ async def on_ready():
                 await channel.purge(limit=100)
 
                 if channel_name == 'menu':
-                    embed = discord.Embed(
-                        title="🎀 Sweet Holes Interactive Menu 🎀",
-                        description="Click the buttons below to interact!",
-                        color=discord.Color.pink())
-                    await channel.send(embed=embed, view=MenuView())
+                    menu_channel = bot.get_channel(1337692528509456414)
+                    if menu_channel:
+                        await menu_channel.purge(limit=100)
+                        embed = discord.Embed(
+                            title="🎀 Sweet Holes Interactive Menu 🎀",
+                            description="Click the buttons below to interact!",
+                            color=discord.Color.pink())
+                        menu_view = MenuView()
+                        await menu_channel.send(embed=embed, view=menu_view)
+                        print("✅ Menu button setup complete")
 
                 elif channel_name == 'order':
                     embed = discord.Embed(
@@ -1910,4 +1921,3 @@ except discord.PrivilegedIntentsRequired:
 except Exception as e:
     print(f"❌ Failed to start bot: {str(e)}")
     exit(1)
-
