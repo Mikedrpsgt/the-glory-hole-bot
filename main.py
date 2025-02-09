@@ -1750,6 +1750,10 @@ async def on_ready():
                 style=discord.ButtonStyle.blurple)
 
             async def check_tier_callback(interaction: discord.Interaction):
+                if interaction.channel_id != 1337508683684384846:
+                    await interaction.response.send_message("❌ This command can only be used in the check tier channel!", ephemeral=True)
+                    return
+                    
                 user_id = interaction.user.id
                 conn = sqlite3.connect('orders.db')
                 c = conn.cursor()
