@@ -1079,16 +1079,16 @@ class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
             conn.commit()
             conn.close()
 
-            # Send to staff channel
-            staff_channel = interaction.client.get_channel(1337712800453230643)
-            if staff_channel:
+            # Send to suggestions channel
+            suggestions_channel = interaction.client.get_channel(1337706421545996399)
+            if suggestions_channel:
                 embed = discord.Embed(
                     title="💡 New Suggestion Received",
                     description=f"From: {interaction.user.mention}\n\n{self.suggestion.value}",
                     color=discord.Color.green(),
                     timestamp=datetime.now()
                 )
-                await staff_channel.send(embed=embed)
+                await suggestions_channel.send(embed=embed)
 
             await interaction.response.send_message("✅ Thank you for your suggestion!", ephemeral=True)
         except Exception as e:
