@@ -984,6 +984,43 @@ class RedeemView(discord.ui.View):
             await log_channel.send(embed=log_embed)
 
 
+class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Reward"):
+    reward_id = discord.ui.TextInput(
+        label="Reward ID",
+        placeholder="Enter the reward ID to remove",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            reward_id = int(self.reward_id.value)
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            
+            # Check if reward exists and belongs to the user
+            c.execute("SELECT vendor_id FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+            result = c.fetchone()
+            
+            if not result:
+                await interaction.response.send_message("❌ Reward not found!", ephemeral=True)
+                conn.close()
+                return
+                
+            if result[0] != interaction.user.id:
+                await interaction.response.send_message("❌ You can only remove your own rewards!", ephemeral=True)
+                conn.close()
+                return
+            
+            c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+            conn.commit()
+            conn.close()
+            
+            await interaction.response.send_message("✅ Reward removed successfully!", ephemeral=True)
+            
+        except ValueError:
+            await interaction.response.send_message("❌ Please enter a valid reward ID!", ephemeral=True)
+
+
 class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
     reward_name = discord.ui.TextInput(label="Reward Name",
                                        placeholder="Enter the reward name",
@@ -1629,8 +1666,20 @@ async def on_ready():
                 description="Click below to add or manage your vendor rewards!",
                 color=discord.Color.blue())
             view = discord.ui.View()
-            vendor_button = discord.ui.Button(
-                label="➕ Add Vendor Reward", style=discord.ButtonStyle.primary)
+            add_button = discord.ui.Button(
+                label="➕ Add Reward", style=discord.ButtonStyle.primary)
+            remove_button = discord.ui.Button(
+                label="🗑️ Remove Reward", style=discord.ButtonStyle.danger)
+
+            async def remove_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337705856061407283:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    return
+                if not any(role.name == "Partner" for role in interaction.user.roles):
+                    await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                    return
+                modal = RemoveVendorRewardModal()
+                await interaction.response.send_modal(modal)
 
             async def vendor_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337705856061407283:
@@ -1639,8 +1688,10 @@ async def on_ready():
                     return
                 await vendor_add(interaction)
 
-            vendor_button.callback = vendor_callback
-            view.add_item(vendor_button)
+            add_button.callback = vendor_callback
+            remove_button.callback = remove_callback
+            view.add_item(add_button)
+            view.add_item(remove_button)
             await vendor_channel.send(embed=embed, view=view)
 
         # Verify database tables
