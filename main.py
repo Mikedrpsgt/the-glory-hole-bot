@@ -490,18 +490,15 @@ async def dare(interaction: discord.Interaction):
 
 @bot.tree.command(name="daily", description="Claim your daily bonus points")
 async def daily(interaction: discord.Interaction):
-    """Gives a daily bonus of points."""
+    """Gives a daily bonus of points with fun animations."""
     try:
         user_id = interaction.user.id
-        
-        # Defer the response while we process
         await interaction.response.defer(ephemeral=True)
         
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
         
         try:
-            # Ensure table exists
             c.execute('''CREATE TABLE IF NOT EXISTS rewards
                         (user_id INTEGER PRIMARY KEY,
                          points INTEGER DEFAULT 0,
@@ -509,53 +506,67 @@ async def daily(interaction: discord.Interaction):
                          last_daily TIMESTAMP)''')
             conn.commit()
             
-            # Check user's current status
             c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
             result = c.fetchone()
             current_time = datetime.now()
             
             if not result:
-                # New user - give welcome bonus
+                # New user welcome bonus with animation
                 bonus_points = random.randint(1, 40)
                 c.execute(
                     "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
                     (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
                 conn.commit()
                 
-                await interaction.followup.send(
-                    f"🎉 **Welcome Bonus!** You earned **+{bonus_points} points!**",
-                    ephemeral=True)
+                reward_msg = await interaction.followup.send(
+                    "🎲 **Rolling your welcome bonus**... \n╰⊱⭑⭑⭑⊱╮",
+                    ephemeral=True
+                )
+                await asyncio.sleep(1.5)
+                await reward_msg.edit(content=
+                    f"🎉 **WELCOME BONUS!** 🎊\n"
+                    f"You won **+{bonus_points} points!**\n"
+                    f"╰⊱{'⭐' * (bonus_points // 8 + 1)}⊱╮")
                     
             else:
                 last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S') if result[0] else datetime.min
                 current_points = result[1] or 0
                 
-                # Check if enough time has passed
                 if current_time.date() <= last_claim.date():
                     time_remaining = datetime.combine(last_claim.date() + timedelta(days=1), datetime.min.time()) - current_time
                     hours, remainder = divmod(time_remaining.seconds, 3600)
                     minutes, _ = divmod(remainder, 60)
                     
                     await interaction.followup.send(
-                        f"⏰ Hold up sweetie! Next reward in **{hours}h {minutes}m**! 💖",
+                        f"⏰ **Not so fast, sweetie!**\n"
+                        f"Next reward in: **{hours}h {minutes}m**\n"
+                        f"╰⊱💖⊱╮",
                         ephemeral=True)
                         
                 else:
-                    # Give daily reward
+                    # Animated daily reward claim
+                    initial_msg = await interaction.followup.send(
+                        "🎲 **Rolling your daily reward**...\n╰⊱⭑⭑⭑⊱╮",
+                        ephemeral=True
+                    )
+                    await asyncio.sleep(1)
+                    
                     bonus_points = random.randint(1, 40)
                     c.execute(
                         "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
                         (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
                     conn.commit()
                     
-                    # Get updated points
                     c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
                     new_total = c.fetchone()[0]
                     
-                    await interaction.followup.send(
-                        f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\n"
-                        f"Total points: **{new_total}**",
-                        ephemeral=True)
+                    # Show bonus animation based on points
+                    stars = '⭐' * (bonus_points // 8 + 1)
+                    await initial_msg.edit(content=
+                        f"🎉 **DAILY REWARD!** 🎊\n"
+                        f"You won **+{bonus_points} points!**\n"
+                        f"Total balance: **{new_total} points**\n"
+                        f"╰⊱{stars}⊱╮")
                         
         finally:
             conn.close()
