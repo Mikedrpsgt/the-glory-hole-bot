@@ -492,45 +492,49 @@ async def dare(interaction: discord.Interaction):
 async def daily(interaction: discord.Interaction):
     """Gives a daily bonus of points."""
     try:
+        await interaction.response.defer(ephemeral=True)
         user_id = interaction.user.id
-        bonus_points = random.randint(5, 15)
-
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
 
-        # Check if user exists in rewards table
-        c.execute("SELECT last_daily FROM rewards WHERE user_id = ?",
-                  (user_id, ))
-        last_claim = c.fetchone()
+        c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
+        result = c.fetchone()
 
-        if last_claim and last_claim[0]:
-            last_time = datetime.strptime(last_claim[0], '%Y-%m-%d %H:%M:%S')
-            if datetime.now() - last_time < timedelta(days=1):
-                await interaction.response.send_message(
-                    "❌ You've already claimed your daily reward! Try again tomorrow!",
+        current_time = datetime.now()
+        if result and result[0]:
+            last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
+            if current_time.date() == last_claim.date():
+                await interaction.followup.send(
+                    "⏰ Hold up sweetie! You've already claimed your daily reward today! Come back tomorrow! 💖",
                     ephemeral=True)
                 conn.close()
                 return
 
-        c.execute(
-            """INSERT INTO rewards (user_id, points, last_daily) 
-                    VALUES (?, ?, ?) 
-                    ON CONFLICT(user_id) DO UPDATE 
-                    SET points = points + ?, last_daily = ?""",
-            (user_id, bonus_points,
-             datetime.now().strftime('%Y-%m-%d %H:%M:%S'), bonus_points,
-             datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        bonus_points = random.randint(1, 40)
+        current_points = result[1] if result else 0
+
+        # Handle new users
+        if not result:
+            c.execute(
+                "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
+                (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
+        else:
+            c.execute(
+                "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
+                (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
+
         conn.commit()
         conn.close()
 
-        await interaction.response.send_message(
-            f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**"
-        )
+        await interaction.followup.send(
+            f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\nTotal points: {current_points + bonus_points}",
+            ephemeral=True)
     except Exception as e:
         if 'conn' in locals():
             conn.close()
-        await interaction.response.send_message(
-            "❌ Something went wrong! Please try again.", ephemeral=True)
+        await interaction.followup.send(
+            "❌ Something went wrong! Please try again!",
+            ephemeral=True)
 
 
 # --- Auto Register Commands ---
