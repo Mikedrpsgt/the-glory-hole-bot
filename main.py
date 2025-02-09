@@ -1176,6 +1176,10 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
                                        placeholder="Describe the reward...",
                                        required=True)
 
+    username = discord.ui.TextInput(label="Username",
+                                    placeholder="Enter the username of the recipient",
+                                    required=True)
+
     async def on_submit(self, interaction: discord.Interaction):
         try:
             points = int(self.points_cost.value)
