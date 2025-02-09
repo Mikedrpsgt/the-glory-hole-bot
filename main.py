@@ -1494,10 +1494,27 @@ async def on_ready():
                 "Click the button below to check your tier and points!",
                 color=discord.Color.pink())
             view = discord.ui.View()
-            view.add_item(
-                discord.ui.Button(label="💝 Check My Tier",
-                                  style=discord.ButtonStyle.blurple,
-                                  custom_id="check_tier"))
+            check_tier_button = discord.ui.Button(
+                label="💝 Check My Tier",
+                style=discord.ButtonStyle.blurple)
+
+            async def check_tier_callback(interaction: discord.Interaction):
+                user_id = interaction.user.id
+                conn = sqlite3.connect('orders.db')
+                c = conn.cursor()
+                c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+                result = c.fetchone()
+                conn.close()
+
+                tier, points = result if result else ("Flirty Bronze", 0)
+                embed = discord.Embed(
+                    title="💖 Your VIP Sweet Holes Card 💖",
+                    description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+                    color=discord.Color.pink())
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            check_tier_button.callback = check_tier_callback
+            view.add_item(check_tier_button)
             await tier_channel.send(embed=embed, view=view)
 
         if membership_channel:
