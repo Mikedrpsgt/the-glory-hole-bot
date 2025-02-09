@@ -645,36 +645,6 @@ async def admin(ctx):
     await ctx.send(embed=embed, view=AdminView(), ephemeral=True)
 
 
-@bot.tree.command(name="update_order",
-                  description="Update order status (Admin only)")
-@is_admin()
-async def update_order(interaction: discord.Interaction, order_id: int,
-                       status: str):
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    c.execute("UPDATE orders SET status = ? WHERE order_id = ?",
-              (status, order_id))
-    conn.commit()
-    conn.close()
-    await interaction.response.send_message(
-        f"✅ Order #{order_id} status updated to: {status}")
-
-
-@bot.tree.command(name="give_points",
-                  description="Give points to a user (Admin only)")
-@is_admin()
-async def give_points(interaction: discord.Interaction, user_id: int,
-                      points: int):
-    conn = sqlite3.connect('orders.db')
-    c = conn.cursor()
-    c.execute(
-        "INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
-        (user_id, points, points))
-    conn.commit()
-    conn.close()
-    await interaction.response.send_message(
-        f"✅ Added {points} points to user {user_id}")
-
 
 @bot.tree.command(name="view_all_orders",
                   description="View all orders (Admin only)")
@@ -820,7 +790,7 @@ async def signup_rewards(interaction: discord.Interaction):
 
     except Exception as e:
         await interaction.response.send_message(
-            "❌ Something went wrong! Please try again.", ephemeralTrue)
+            "❌ Something went wrong! Please try again.", ephemeral=True)
         if 'conn' in locals():
             conn.close()
 
@@ -1120,80 +1090,6 @@ class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
         except Exception as e:
             await interaction.response.send_message("❌ An error occurred while submitting your suggestion.", ephemeral=True)
 
-class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
-    complaint = discord.ui.TextInput(
-        label="Your Complaint",
-        style=discord.TextStyle.long,
-        placeholder="Please describe your complaint in detail...",
-        required=True
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS complaints
-                        (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                         user_id INTEGER,
-                         complaint TEXT,
-                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-            c.execute("INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
-                     (interaction.user.id, self.complaint.value))
-            conn.commit()
-            conn.close()
-
-            # Send to staff channel
-            staff_channel = interaction.client.get_channel(1337712800453230643)
-            if staff_channel:
-                embed = discord.Embed(
-                    title="⚠️ New Complaint Filed",
-                    description=f"From: {interaction.user.mention}\n\n{self.complaint.value}",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now()
-                )
-                await staff_channel.send(embed=embed)
-
-            await interaction.response.send_message("✅ Your complaint has been filed and will be reviewed by staff.", ephemeral=True)
-        except Exception as e:
-            await interaction.response.send_message("❌ An error occurred while filing your complaint.", ephemeral=True)
-
-class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
-    suggestion = discord.ui.TextInput(
-        label="Your Suggestion",
-        style=discord.TextStyle.long,
-        placeholder="Share your ideas with us...",
-        required=True
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS suggestions
-                        (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                         user_id INTEGER,
-                         suggestion TEXT,
-                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-            c.execute("INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
-                     (interaction.user.id, self.suggestion.value))
-            conn.commit()
-            conn.close()
-
-            # Send to staff channel
-            staff_channel = interaction.client.get_channel(1337712800453230643)
-            if staff_channel:
-                embed = discord.Embed(
-                    title="💡 New Suggestion Received",
-                    description=f"From: {interaction.user.mention}\n\n{self.suggestion.value}",
-                    color=discord.Color.green(),
-                    timestamp=datetime.now()
-                )
-                await staff_channel.send(embed=embed)
-
-            await interaction.response.send_message("✅ Thank you for your suggestion!", ephemeral=True)
-        except Exception as e:
-            await interaction.response.send_message("❌ An error occurred while submitting your suggestion.", ephemeral=True)
-
 class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Reward"):
     reward_id = discord.ui.TextInput(
         label="Reward ID",
@@ -1303,7 +1199,7 @@ async def suggestion(interaction: discord.Interaction):
     if interaction.channel_id != 1337508683286052895:
         await interaction.response.send_message("❌ Please use this command in the suggestions channel!", ephemeral=True)
         return
-    
+
     modal = SuggestionModal()
     await interaction.response.send_modal(modal)
 
@@ -1721,6 +1617,15 @@ async def on_ready():
                      (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
                       user_id INTEGER, rating INTEGER, comment TEXT)''')
 
+        c.execute('''CREATE TABLE IF NOT EXISTS complaints
+                     (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS suggestions
+                     (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
+
         conn.commit()
         conn.close()
 
@@ -1762,7 +1667,7 @@ async def on_ready():
             # Initialize suggestion channels
             suggestion_source = bot.get_channel(1337508683286052895)
             suggestion_target = bot.get_channel(1337706421545996399)
-            
+
             if suggestion_source and suggestion_target:
                 await suggestion_source.purge(limit=100)
                 embed = discord.Embed(
@@ -1993,7 +1898,7 @@ async def on_ready():
         # Verify database tables
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        tables = ['orders', 'rewards', 'feedback']
+        tables = ['orders', 'rewards', 'feedback', 'complaints', 'suggestions', 'vendor_rewards']
         for table in tables:
             c.execute(
                 f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'"
