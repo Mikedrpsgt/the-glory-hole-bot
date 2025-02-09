@@ -1749,9 +1749,12 @@ async def on_ready():
         # Clear existing messages and send new ones
         if menu_channel:
             await menu_channel.purge(limit=100)
-            # Initialize suggestion channel
-            suggestion_channel = bot.get_channel(1337706421545996399)
-            if suggestion_channel:
+            # Initialize suggestion channels
+            suggestion_source = bot.get_channel(1337508683286052895)
+            suggestion_target = bot.get_channel(1337706421545996399)
+            
+            if suggestion_source and suggestion_target:
+                await suggestion_source.purge(limit=100)
                 embed = discord.Embed(
                     title="💡 Make a Suggestion",
                     description="Have an idea to make Sweet Holes even better? Click below!",
@@ -1760,7 +1763,7 @@ async def on_ready():
                 suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
 
                 async def suggest_callback(interaction: discord.Interaction):
-                    if interaction.channel_id != 1337706421545996399:
+                    if interaction.channel_id != 1337508683286052895:
                         await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                         return
                     modal = SuggestionModal()
@@ -1768,7 +1771,7 @@ async def on_ready():
 
                 suggest_button.callback = suggest_callback
                 view.add_item(suggest_button)
-                await suggestion_channel.send(embed=embed, view=view)
+                await suggestion_source.send(embed=embed, view=view)
 
             # Initialize complaint channel
             complaint_channel = bot.get_channel(1337706481755095100)
