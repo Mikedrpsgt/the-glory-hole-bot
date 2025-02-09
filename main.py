@@ -358,24 +358,6 @@ class ComplaintView(View):
         await interaction.response.send_modal(modal)
 
 
-    c = conn.cursor()
-
-    c.execute("SELECT user_id, points FROM rewards")
-    users = c.fetchall()
-
-    for user_id, points in users:
-        new_tier = "Flirty Bronze"
-        for tier, min_points in LOYALTY_TIERS.items():
-            if points >= min_points:
-                new_tier = tier
-
-        c.execute("UPDATE rewards SET loyalty_tier = ? WHERE user_id = ?",
-                  (new_tier, user_id))
-
-    conn.commit()
-    conn.close()
-
-
 # Menu and order commands are now handled in on_ready
 
 
