@@ -39,6 +39,14 @@ def setup_database():
                      (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)'''
                   )
 
+        c.execute('''CREATE TABLE IF NOT EXISTS complaints
+                     (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS suggestions
+                     (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
         c.execute('COMMIT')
     except Exception as e:
         c.execute('ROLLBACK')
@@ -308,11 +316,6 @@ class MenuView(View):
     def __init__(self):
         super().__init__()
 
-    @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
-    async def file_complaint(self, interaction: discord.Interaction, button: Button):
-        modal = ComplaintModal()
-        await interaction.response.send_modal(modal)
-
     @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
     async def make_suggestion(self, interaction: discord.Interaction, button: Button):
         modal = SuggestionModal()
@@ -426,10 +429,10 @@ async def daily(interaction: discord.Interaction):
     try:
         user_id = interaction.user.id
         await interaction.response.defer(ephemeral=True)
-        
+
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         try:
             c.execute('''CREATE TABLE IF NOT EXISTS rewards
                         (user_id INTEGER PRIMARY KEY,
@@ -437,11 +440,11 @@ async def daily(interaction: discord.Interaction):
                          loyalty_tier TEXT DEFAULT 'Flirty Bronze',
                          last_daily TIMESTAMP)''')
             conn.commit()
-            
+
             c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
             result = c.fetchone()
             current_time = datetime.now()
-            
+
             if not result:
                 # New user welcome bonus with animation
                 bonus_points = random.randint(1, 40)
@@ -449,7 +452,7 @@ async def daily(interaction: discord.Interaction):
                     "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
                     (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
                 conn.commit()
-                
+
                 reward_msg = await interaction.followup.send(
                     "🎲 **Rolling your welcome bonus**... \n╰⊱⭑⭑⭑⊱╮",
                     ephemeral=True
@@ -459,22 +462,22 @@ async def daily(interaction: discord.Interaction):
                     f"🎉 **WELCOME BONUS!** 🎊\n"
                     f"You won **+{bonus_points} points!**\n"
                     f"╰⊱{'⭐' * (bonus_points // 8 + 1)}⊱╮")
-                    
+
             else:
                 last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S') if result[0] else datetime.min
                 current_points = result[1] or 0
-                
+
                 if current_time.date() <= last_claim.date():
                     time_remaining = datetime.combine(last_claim.date() + timedelta(days=1), datetime.min.time()) - current_time
                     hours, remainder = divmod(time_remaining.seconds, 3600)
                     minutes, _ = divmod(remainder, 60)
-                    
+
                     await interaction.followup.send(
                         f"⏰ **Not so fast, sweetie!**\n"
                         f"Next reward in: **{hours}h {minutes}m**\n"
                         f"╰⊱💖⊱╮",
                         ephemeral=True)
-                        
+
                 else:
                     # Animated daily reward claim
                     initial_msg = await interaction.followup.send(
@@ -482,16 +485,16 @@ async def daily(interaction: discord.Interaction):
                         ephemeral=True
                     )
                     await asyncio.sleep(1)
-                    
+
                     bonus_points = random.randint(1, 40)
                     c.execute(
                         "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
                         (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
                     conn.commit()
-                    
+
                     c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
                     new_total = c.fetchone()[0]
-                    
+
                     # Show bonus animation based on points
                     stars = '⭐' * (bonus_points // 8 + 1)
                     await initial_msg.edit(content=
@@ -499,10 +502,10 @@ async def daily(interaction: discord.Interaction):
                         f"You won **+{bonus_points} points!**\n"
                         f"Total balance: **{new_total} points**\n"
                         f"╰⊱{stars}⊱╮")
-                        
+
         finally:
             conn.close()
-            
+
     except Exception as e:
         print(f"Daily reward error: {str(e)}")
         await interaction.followup.send(
@@ -796,7 +799,7 @@ async def vip_report(interaction: discord.Interaction):
     )
     orders_data = c.fetchone()
     daily_orders = orders_data[0] or 0
-    daily_items = orders_data[1] or 0
+    daily_items = orders_data[1] or0
 
     # Get point redemptions
     c.execute("SELECT COUNT(*) FROM rewards WHERE points > 0")
@@ -978,22 +981,22 @@ class RedeemView(discord.ui.View):
 
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Verify current points and deduct
         c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
         current_points = c.fetchone()
-        
+
         if not current_points or current_points[0] < cost:
             await interaction.response.send_message(
                 "❌ Insufficient points for this redemption.",
                 ephemeral=True)
             conn.close()
             return
-            
+
         c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?",
                   (cost, interaction.user.id))
         conn.commit()
-        
+
         # Get updated points
         c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
         new_points = c.fetchone()[0]
@@ -1034,11 +1037,6 @@ class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
         try:
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS complaints
-                        (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                         user_id INTEGER,
-                         complaint TEXT,
-                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
             c.execute("INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
                      (interaction.user.id, self.complaint.value))
             conn.commit()
@@ -1071,11 +1069,6 @@ class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
         try:
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS suggestions
-                        (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                         user_id INTEGER,
-                         suggestion TEXT,
-                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
             c.execute("INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
                      (interaction.user.id, self.suggestion.value))
             conn.commit()
@@ -1361,7 +1354,8 @@ async def on_ready():
             'vip': bot.get_channel(1337508682950377480),
             'job': bot.get_channel(1337508683286052894),
             'redeem': bot.get_channel(1337508683684384847),
-            'vendor': bot.get_channel(1337705856061407283)
+            'vendor': bot.get_channel(1337705856061407283),
+            'complaints': bot.get_channel(1337644894558097408)
         }
 
         # Setup database
@@ -1382,6 +1376,14 @@ async def on_ready():
         c.execute('''CREATE TABLE IF NOT EXISTS feedback
                      (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
                       user_id INTEGER, rating INTEGER, comment TEXT)''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS complaints
+                     (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS suggestions
+                     (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
         conn.commit()
         conn.close()
@@ -1560,6 +1562,12 @@ async def on_ready():
                         view.add_item(add_button)
                         view.add_item(remove_button)
                         await vendor_management_channel.send(embed=embed, view=view)
+                elif channel_name == 'complaints':
+                    embed = discord.Embed(
+                        title="📝 File a Complaint",
+                        description="Having an issue? Let us know below.",
+                        color=discord.Color.red())
+                    await channel.send(embed=embed, view=ComplaintView())
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
@@ -1652,6 +1660,9 @@ async def on_ready():
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
                       user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
+        c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
+                     (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)''')
 
         conn.commit()
         conn.close()
@@ -1667,6 +1678,13 @@ async def on_ready():
         order_channel = bot.get_channel(1337508683286052899)
         tier_channel = bot.get_channel(1337508683684384846)
         membership_channel = bot.get_channel(1337508682950377480)
+        complaints_channel = bot.get_channel(1337644894558097408)
+        suggestion_channel = bot.get_channel(1337508683286052895)
+        vendor_channel = bot.get_channel(1337705856061407283)
+        vendor_management_channel = bot.get_channel(1337709954336952391)
+        redeem_channel = bot.get_channel(1337508683684384847)
+
+
 
         # Set up VIP application button in membership channel
         if membership_channel:
@@ -1686,57 +1704,11 @@ async def on_ready():
                                              style=discord.ButtonStyle.danger)
             apply_button.callback = apply_callback
             view.add_item(apply_button)
-            await apply_channel.send(embed=embed, view=view)
+            await membership_channel.send(embed=embed, view=view)
 
         # Clear existing messages and send new ones
         if menu_channel:
             await menu_channel.purge(limit=100)
-            # Initialize suggestion channels
-            suggestion_source = bot.get_channel(1337508683286052895)
-            suggestion_target = bot.get_channel(1337706421545996399)
-
-            if suggestion_source and suggestion_target:
-                await suggestion_source.purge(limit=100)
-                embed = discord.Embed(
-                    title="💡 Make a Suggestion",
-                    description="Have an idea to make Sweet Holes even better? Click below!",
-                    color=discord.Color.green())
-                view = discord.ui.View(timeout=None)  # Make view persistent
-                suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
-
-                async def suggest_callback(interaction: discord.Interaction):
-                    if interaction.channel_id != 1337508683286052895:
-                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
-                        return
-                    modal = SuggestionModal()
-                    await interaction.response.send_modal(modal)
-
-                suggest_button.callback = suggest_callback
-                view.add_item(suggest_button)
-                await suggestion_source.send(embed=embed, view=view)
-
-            # Initialize complaint channel
-            complaint_channel = bot.get_channel(1337706481755095100)
-            if complaint_channel:
-                embed = discord.Embed(
-                    title="📝 File a Complaint",
-                    description="Having an issue? Let us know below.",
-                    color=discord.Color.red())
-                view = discord.ui.View(timeout=None)  # Make view persistent
-                complaint_button = discord.ui.Button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
-
-                async def complaint_callback(interaction: discord.Interaction):
-                    if interaction.channel_id != 1337706481755095100:
-                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
-                        return
-                    modal = ComplaintModal()
-                    await interaction.response.send_modal(modal)
-
-                complaint_button.callback = complaint_callback
-                view.add_item(complaint_button)
-                await complaint_channel.send(embed=embed, view=view)
-
-            # Original menu channel setup
             embed = discord.Embed(
                 title="🎀 Sweet Holes Interactive Menu 🎀",
                 description="Click the buttons below to interact!",
@@ -1768,61 +1740,70 @@ async def on_ready():
                 color=discord.Color.gold())
             await membership_channel.send(embed=embed)
 
-        # Initialize VIP application button in membership channel
-        vip_channel = bot.get_channel(1337508682950377480)
-        if vip_channel:
-            await vip_channel.purge(limit=100)
+
+        if complaints_channel:
+            await complaints_channel.purge(limit=100)
             embed = discord.Embed(
-                title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
-                description=
-                "Join our exclusive VIP program and unlock special perks!",
-                color=discord.Color.gold())
-            view = discord.ui.View()
+                title="📝 File a Complaint",
+                description="Having an issue? Let us know below.",
+                color=discord.Color.red())
+            await complaints_channel.send(embed=embed, view=ComplaintView())
 
-            async def vip_callback(interaction: discord.Interaction):
-                if interaction.channel.id != 1337508682950377480:
-                    await interaction.response.send_message("❌ Wrong channel!",
-                                                            ephemeral=True)
+        if suggestion_channel:
+            await suggestion_channel.purge(limit=100)
+            embed = discord.Embed(
+                title="💡 Make a Suggestion",
+                description="Have an idea to make Sweet Holes even better? Click below!",
+                color=discord.Color.green())
+            view = discord.ui.View(timeout=None)  # Make view persistent
+            suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
+
+            async def suggest_callback(interaction: discord.Interaction):
+                if interaction.channel_id != 1337508683286052895:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                     return
-
-                response_channel = bot.get_channel(1337646191994867772)
-                modal = ApplicationModal(response_channel)
+                modal = SuggestionModal()
                 await interaction.response.send_modal(modal)
 
-            vip_button = discord.ui.Button(label="🌟 Apply for VIP",
-                                           style=discord.ButtonStyle.danger)
-            vip_button.callback = vip_callback
-            view.add_item(vip_button)
-            await vip_channel.send(embed=embed, view=view)
+            suggest_button.callback = suggest_callback
+            view.add_item(suggest_button)
+            await suggestion_channel.send(embed=embed, view=view)
 
-        # Initialize job application button
-        job_channel = bot.get_channel(1337508683286052894)
-        if job_channel:
-            await job_channel.purge(limit=100)
+        if vendor_channel:
+            await vendor_channel.purge(limit=100)
             embed = discord.Embed(
-                title="💼 SWEET HOLES EMPLOYMENT 💼",
-                description="Join our amazing team! Click below to apply.",
+                title="🏪 Vendor Reward Management",
+                description="Click below to add or manage your vendor rewards!",
                 color=discord.Color.blue())
             view = discord.ui.View()
+            add_button = discord.ui.Button(
+                label="➕ Add Reward", style=discord.ButtonStyle.primary)
+            remove_button = discord.ui.Button(
+                label="🗑️ Remove Reward", style=discord.ButtonStyle.danger)
 
-            async def job_callback(interaction: discord.Interaction):
-                if interaction.channel.id != 1337508683286052894:
+            async def remove_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337705856061407283:
+                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    return
+                if not any(role.name == "Partner" for role in interaction.user.roles):
+                    await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                    return
+                modal = RemoveVendorRewardModal()
+                await interaction.response.send_modal(modal)
+
+            async def vendor_callback(interaction: discord.Interaction):
+                if interaction.channel.id != 1337705856061407283:
                     await interaction.response.send_message("❌ Wrong channel!",
                                                             ephemeral=True)
                     return
+                await vendor_add(interaction)
 
-                response_channel = bot.get_channel(1337645313279791174)
-                modal = ApplicationModal(response_channel)
-                await interaction.response.send_modal(modal)
+            add_button.callback = vendor_callback
+            remove_button.callback = remove_callback
+            view.add_item(add_button)
+            view.add_item(remove_button)
+            await vendor_channel.send(embed=embed, view=view)
 
-            job_button = discord.ui.Button(label="📝 Apply Now",
-                                           style=discord.ButtonStyle.primary)
-            job_button.callback = job_callback
-            view.add_item(job_button)
-            await job_channel.send(embed=embed, view=view)
-
-        # Initialize redeem command in rewards channel
-        redeem_channel = bot.get_channel(1337508683684384847)
         if redeem_channel:
             await redeem_channel.purge(limit=100)
             embed = discord.Embed(
@@ -1863,42 +1844,6 @@ async def on_ready():
             view.add_item(redeem_button)
             await redeem_channel.send(embed=embed, view=view)
 
-        # Initialize vendor command in vendor channel
-        vendor_channel = bot.get_channel(1337705856061407283)
-        if vendor_channel:
-            await vendor_channel.purge(limit=100)
-            embed = discord.Embed(
-                title="🏪 Vendor Reward Management",
-                description="Click below to add or manage your vendor rewards!",
-                color=discord.Color.blue())
-            view = discord.ui.View()
-            add_button = discord.ui.Button(
-                label="➕ Add Reward", style=discord.ButtonStyle.primary)
-            remove_button = discord.ui.Button(
-                label="🗑️ Remove Reward", style=discord.ButtonStyle.danger)
-
-            async def remove_callback(interaction: discord.Interaction):
-                if interaction.channel.id != 1337705856061407283:
-                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
-                    return
-                if not any(role.name == "Partner" for role in interaction.user.roles):
-                    await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
-                    return
-                modal = RemoveVendorRewardModal()
-                await interaction.response.send_modal(modal)
-
-            async def vendor_callback(interaction: discord.Interaction):
-                if interaction.channel.id != 1337705856061407283:
-                    await interaction.response.send_message("❌ Wrong channel!",
-                                                            ephemeral=True)
-                    return
-                await vendor_add(interaction)
-
-            add_button.callback = vendor_callback
-            remove_button.callback = remove_callback
-            view.add_item(add_button)
-            view.add_item(remove_button)
-            await vendor_channel.send(embed=embed, view=view)
 
         # Verify database tables
         conn = sqlite3.connect('orders.db')
@@ -1944,3 +1889,11 @@ except discord.PrivilegedIntentsRequired:
 except Exception as e:
     print(f"❌ Failed to start bot: {str(e)}")
     exit(1)
+
+class ComplaintView(View):
+    def __init__(self):
+        super().__init__()
+    @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
+    async def file_complaint(self, interaction: discord.Interaction, button: Button):
+        modal = ComplaintModal()
+        await interaction.response.send_modal(modal)
