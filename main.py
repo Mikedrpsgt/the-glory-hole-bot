@@ -1229,10 +1229,15 @@ async def vendor_remove(interaction: discord.Interaction):
 @bot.event
 async def on_member_join(member):
     """Sends a welcome message when a new member joins and assigns default role."""
-    # Assign default Customer role
-    customer_role = discord.utils.get(member.guild.roles, name="Customers")
-    if customer_role:
-        await member.add_roles(customer_role)
+    try:
+        # Assign default Customer role
+        customer_role = discord.utils.get(member.guild.roles, name="Customers")
+        if customer_role:
+            await member.add_roles(customer_role)
+    except discord.Forbidden:
+        print(f"⚠️ Bot lacks permission to assign roles to {member.name}")
+    except Exception as e:
+        print(f"❌ Error assigning role to {member.name}: {str(e)}")
     
     welcome_channel = bot.get_channel(1337508682950377473)
     if welcome_channel:
