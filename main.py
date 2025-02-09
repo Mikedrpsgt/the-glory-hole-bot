@@ -1910,11 +1910,8 @@ async def on_ready():
         print(f"❌ Startup Error: {str(e)}")
 
 
-# Run the bot
-TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-if not TOKEN:
-    print("❌ Error: No Discord bot token found! Make sure DISCORD_BOT_TOKEN is set in the Secrets tab.")
-    exit(1)
+# Run the bot with hardcoded token
+TOKEN = "FNP2iozeNnKCuiCAoxexmKuAczh00Cwt"
 try:
     bot.run(TOKEN)
 except Exception as e:
