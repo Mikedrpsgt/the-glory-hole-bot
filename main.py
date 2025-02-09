@@ -492,47 +492,62 @@ async def dare(interaction: discord.Interaction):
 async def daily(interaction: discord.Interaction):
     """Gives a daily bonus of points."""
     try:
-        await interaction.response.defer(ephemeral=True)
         user_id = interaction.user.id
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
 
+        # Ensure user exists in rewards table
         c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
         result = c.fetchone()
-
+        
         current_time = datetime.now()
-        if result and result[0]:
-            last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
-            if current_time.date() == last_claim.date():
-                await interaction.followup.send(
-                    "⏰ Hold up sweetie! You've already claimed your daily reward today! Come back tomorrow! 💖",
-                    ephemeral=True)
-                conn.close()
-                return
-
-        bonus_points = random.randint(1, 40)
-        current_points = result[1] if result else 0
-
-        # Handle new users
-        if not result:
+        
+        if result is None:
+            # New user
+            bonus_points = random.randint(1, 40)
             c.execute(
                 "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
                 (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
-        else:
-            c.execute(
-                "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
-                (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
+            conn.commit()
+            conn.close()
+            
+            await interaction.response.send_message(
+                f"🎉 **Welcome Bonus!** You earned **+{bonus_points} points!**",
+                ephemeral=True)
+            return
+            
+        last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S') if result[0] else datetime.min
+        current_points = result[1]
 
+        # Check if enough time has passed (next day UTC)
+        if current_time.date() <= last_claim.date():
+            time_remaining = datetime.combine(last_claim.date() + timedelta(days=1), datetime.min.time()) - current_time
+            hours, remainder = divmod(time_remaining.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            
+            await interaction.response.send_message(
+                f"⏰ Hold up sweetie! Next reward in **{hours}h {minutes}m**! 💖",
+                ephemeral=True)
+            conn.close()
+            return
+
+        # Give reward
+        bonus_points = random.randint(1, 40)
+        c.execute(
+            "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
+            (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
         conn.commit()
         conn.close()
 
-        await interaction.followup.send(
-            f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\nTotal points: {current_points + bonus_points}",
+        await interaction.response.send_message(
+            f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\n"
+            f"Total points: **{current_points + bonus_points}**",
             ephemeral=True)
+            
     except Exception as e:
         if 'conn' in locals():
             conn.close()
-        await interaction.followup.send(
+        await interaction.response.send_message(
             "❌ Something went wrong! Please try again!",
             ephemeral=True)
 
