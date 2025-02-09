@@ -1035,16 +1035,16 @@ class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
             conn.commit()
             conn.close()
 
-            # Send to staff channel
-            staff_channel = interaction.client.get_channel(1337712800453230643)
-            if staff_channel:
+            # Send to complaints channel
+            complaints_channel = interaction.client.get_channel(1337706481755095100)
+            if complaints_channel:
                 embed = discord.Embed(
                     title="⚠️ New Complaint Filed",
                     description=f"From: {interaction.user.mention}\n\n{self.complaint.value}",
                     color=discord.Color.red(),
                     timestamp=datetime.now()
                 )
-                await staff_channel.send(embed=embed)
+                await complaints_channel.send(embed=embed)
 
             await interaction.response.send_message("✅ Your complaint has been filed and will be reviewed by staff.", ephemeral=True)
         except Exception as e:
