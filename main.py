@@ -346,9 +346,7 @@ class MenuView(View):
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
 
-            c.execute(
-                "SELECT last_daily, points FROM rewards WHERE user_id = ?",
-                (user_id, ))
+            c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
             result = c.fetchone()
 
             current_time = datetime.now()
@@ -367,14 +365,15 @@ class MenuView(View):
             bonus_points = random.randint(5, 15)
             current_points = result[1] if result else 0
 
-            c.execute(
-                """INSERT INTO rewards (user_id, points, last_daily) 
-                        VALUES (?, ?, ?) 
-                        ON CONFLICT(user_id) DO UPDATE 
-                        SET points = points + ?, last_daily = ?""",
-                (user_id, bonus_points,
-                 current_time.strftime('%Y-%m-%d %H:%M:%S'), bonus_points,
-                 current_time.strftime('%Y-%m-%d %H:%M:%S')))
+            if result:
+                c.execute(
+                    "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
+                    (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
+            else:
+                c.execute(
+                    "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
+                    (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
+
             conn.commit()
             conn.close()
 
@@ -382,11 +381,11 @@ class MenuView(View):
                 f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\nTotal points: {current_points + bonus_points}",
                 ephemeral=True)
         except Exception as e:
+            if 'conn' in locals():
+                conn.close()
             await interaction.response.send_message(
                 "❌ Something went wrong with the daily reward. Please try again!",
                 ephemeral=True)
-            if 'conn' in locals():
-                conn.close()
 
     @discord.ui.button(label="💝 My Tier", style=discord.ButtonStyle.blurple)
     async def check_tier(self, interaction: discord.Interaction,
