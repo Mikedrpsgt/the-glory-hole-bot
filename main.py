@@ -347,6 +347,17 @@ class MenuView(View):
 async def update_loyalty():
     """Upgrades users based on points."""
     conn = sqlite3.connect('orders.db')
+
+class ComplaintView(View):
+    def __init__(self):
+        super().__init__(timeout=None)  # Make the view persistent
+        
+    @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
+    async def file_complaint(self, interaction: discord.Interaction, button: Button):
+        modal = ComplaintModal()
+        await interaction.response.send_modal(modal)
+
+
     c = conn.cursor()
 
     c.execute("SELECT user_id, points FROM rewards")
@@ -454,16 +465,6 @@ async def daily(interaction: discord.Interaction):
                 conn.commit()
 
                 reward_msg = await interaction.followup.send(
-
-class ComplaintView(View):
-    def __init__(self):
-        super().__init__(timeout=None)  # Make the view persistent
-        
-    @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
-    async def file_complaint(self, interaction: discord.Interaction, button: Button):
-        modal = ComplaintModal()
-        await interaction.response.send_modal(modal)
-
                     "🎲 **Rolling your welcome bonus**... \n╰⊱⭑⭑⭑⊱╮",
                     ephemeral=True
                 )
