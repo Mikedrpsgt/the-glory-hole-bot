@@ -32,8 +32,9 @@ def setup_database():
                       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards 
-                     (user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
-                      last_daily TIMESTAMP)''')
+                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP,
+                      username TEXT)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS feedback 
                      (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)'''
@@ -439,10 +440,9 @@ async def daily(interaction: discord.Interaction):
 
         try:
             c.execute('''CREATE TABLE IF NOT EXISTS rewards
-                        (user_id INTEGER PRIMARY KEY, username TEXT,
-                         points INTEGER DEFAULT 0,
+                        (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
                          loyalty_tier TEXT DEFAULT 'Flirty Bronze',
-                         last_daily TIMESTAMP)''')
+                         last_daily TIMESTAMP, username TEXT)''')
             conn.commit()
 
             c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
@@ -677,21 +677,21 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             # Add points
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             try:
                 c.execute(
                     "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
                     (member.id, points, member.display_name, points))
                 conn.commit()
-                
+
                 # Verify points were added
                 c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
                 new_points = c.fetchone()[0]
-                
+
                 await interaction.response.send_message(
                     f"✅ Added {points} points to {member.display_name}\nNew total: {new_points} points", 
                     ephemeral=True)
-                
+
             except sqlite3.Error as e:
                 await interaction.response.send_message(
                     f"❌ Database error: {str(e)}", ephemeral=True)
@@ -1512,8 +1512,8 @@ async def on_ready():
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards
-                     (user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0,
-                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)'''
+                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP, username TEXT)'''
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS feedback
@@ -1579,7 +1579,7 @@ async def on_ready():
                         user_id = interaction.user.id
                         conn = sqlite3.connect('orders.db')
                         c = conn.cursor()
-                        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+                        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user<previous_generation>id = ?", (user_id,))
                         result = c.fetchone()
                         conn.close()
 
@@ -1835,8 +1835,8 @@ async def on_ready():
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards
-                     (user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0,
-                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)'''
+                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP, username TEXT)'''
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS feedback
@@ -2061,7 +2061,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keepalive import keep_alive
+from keep_alive import keep_alive
 keep_alive()  # This starts the Flask server in a separate thread
 
 # Then continue with bot setup and execution
