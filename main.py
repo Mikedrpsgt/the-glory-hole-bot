@@ -1720,7 +1720,6 @@ async def on_ready():
 
         # Set up VIP application button in membership channel
         if membership_channel:
-            await membership_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
                 description=
@@ -1738,9 +1737,21 @@ async def on_ready():
             view.add_item(apply_button)
             await membership_channel.send(embed=embed, view=view)
 
-        # Clear existing messages and send new ones
+        # Clear messages only in specific channels, preserving membership and vendor history
+        channels_to_purge = {
+            menu_channel,
+            order_channel,
+            tier_channel,
+            complaints_channel,
+            suggestion_channel,
+            redeem_channel
+        }
+        
+        for channel in channels_to_purge:
+            if channel:
+                await channel.purge(limit=100)
+
         if menu_channel:
-            await menu_channel.purge(limit=100)
             embed = discord.Embed(
                 title="🎀 Sweet Holes Interactive Menu 🎀",
                 description="Click the buttons below to interact!",
@@ -1802,7 +1813,6 @@ async def on_ready():
             await suggestion_channel.send(embed=embed, view=view)
 
         if vendor_channel:
-            await vendor_channel.purge(limit=100)
             embed = discord.Embed(
                 title="🏪 Vendor Reward Management",
                 description="Click below to add or manage your vendor rewards!",
