@@ -47,6 +47,10 @@ def setup_database():
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
                       user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
+        c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
+                     (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)''')
+
         c.execute('COMMIT')
     except Exception as e:
         c.execute('ROLLBACK')
@@ -352,7 +356,7 @@ class SuggestionView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
 
-    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="make_suggestion_button")
+    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
     async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.channel_id != 1337508683286052895:
             await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
@@ -792,7 +796,7 @@ async def signup_rewards(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="vip_report",
-                  description="Generate VIP business report")
+                  description="Generate VIPbusiness report")
 @is_admin()
 async def vip_report(interaction:discord.Interaction):
     conn = sqlite3.connect('orders.db')
@@ -1461,18 +1465,7 @@ async def on_ready():
                     embed = discord.Embed(
                         title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
                         description=
-                        "Join our exclusive VIP program and unlock special perks!\n"
-                        "🍩 Sweet Rewards Loyalty Program 🍩\n\n"
-                        "🎁 Core Benefits (Available to all members)\n"
-                        :52988babypinkarrowright: Free Donut- Earn a free donut as soon as you sign up 
-                        :52988babypinkarrowright:Free Item Rewards – Earn points with every purchase and redeem them for free donuts, coffee, or specialty treats.
-                        :52988babypinkarrowright:In-Store Discounts – Enjoy an automatic 10% off all in-store purchases.
-                        :52988babypinkarrowright:Exclusive Preorder Perks – Get a 15% discount when preordering for pickup or catering.
-
-                        🎟️ Extra Perks & Partner Benefits
-                        :52988babypinkarrowright:Partnered Business Coupons – Receive monthly discount coupons for nearby restaurants, coffee shops, and local businesses.
-                        :52988babypinkarrowright:Monthly Raffles – Members are automatically entered into a drawing for free treats, gift cards, or exclusive merchandise.
-                        :52988babypinkarrowright:Event Invites – Get access to special events hosted by our partner businesses, such as tastings, live music nights, or exclusive product launches,
+                        "Join our exclusive VIP program and unlock special perks!",
                         color=discord.Color.gold())
                     view = discord.ui.View()
                     vip_button = discord.ui.Button(
@@ -1615,6 +1608,8 @@ async def on_ready():
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
+
+        async def redeem(interaction: discord.Interaction):
             if interaction.channel_id != 1337508683684384847:
                 await interaction.response.send_message(
                     "❌ This command can only be used in the rewards redemption channel!",
@@ -1755,7 +1750,7 @@ async def on_ready():
             suggestion_channel,
             redeem_channel
         }
-        
+
         for channel in channels_to_purge:
             if channel and channel.id != 1337508682950377480:  # Skip membership channel
                 await channel.purge(limit=100)
