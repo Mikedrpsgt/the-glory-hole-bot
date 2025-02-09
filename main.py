@@ -1461,10 +1461,9 @@ async def on_ready():
                     embed = discord.Embed(
                         title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
                         description=
-                        "Join our exclusive VIP program and unlock special perks!"
-                        🍩 Sweet Rewards Loyalty Program 🍩
-
-                        🎁 Core Benefits (Available to all members)
+                        "Join our exclusive VIP program and unlock special perks!\n"
+                        "🍩 Sweet Rewards Loyalty Program 🍩\n\n"
+                        "🎁 Core Benefits (Available to all members)\n"
                         :52988babypinkarrowright: Free Donut- Earn a free donut as soon as you sign up 
                         :52988babypinkarrowright:Free Item Rewards – Earn points with every purchase and redeem them for free donuts, coffee, or specialty treats.
                         :52988babypinkarrowright:In-Store Discounts – Enjoy an automatic 10% off all in-store purchases.
