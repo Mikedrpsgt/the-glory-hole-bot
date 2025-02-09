@@ -680,8 +680,8 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
             try:
                 c.execute(
-                    "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
-                    (member.id, points, member.display_name, points))
+                    "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
+                    (member.id, points, member.display_name, points, member.display_name))
                 conn.commit()
 
                 # Verify points were added
