@@ -617,22 +617,30 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            input_value = self.username.value.lower()
+            input_value = self.username.value.lower().strip()
             member = None
-            
+
             # Try to find member by ID first
             if input_value.isdigit():
                 member = interaction.guild.get_member(int(input_value))
-            
+
             if not member:
-                # Try different name matching methods
+                # Try exact matches first
                 for m in interaction.guild.members:
-                    if (input_value in m.name.lower() or 
-                        input_value in m.display_name.lower() or 
-                        input_value == str(m.id) or
-                        (m.nick and input_value in m.nick.lower())):
+                    if (input_value == m.name.lower() or 
+                        input_value == m.display_name.lower() or 
+                        (m.nick and input_value == m.nick.lower())):
                         member = m
                         break
+
+                # If no exact match, try partial matches
+                if not member:
+                    for m in interaction.guild.members:
+                        if (input_value in m.name.lower() or 
+                            input_value in m.display_name.lower() or 
+                            (m.nick and input_value in m.nick.lower())):
+                            member = m
+                            break
 
             if not member:
                 # Show active members if not found
@@ -675,11 +683,11 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
         try:
             input_value = self.username.value.lower()
             member = None
-            
+
             # Try to find member by ID first
             if input_value.isdigit():
                 member = interaction.guild.get_member(int(input_value))
-            
+
             if not member:
                 # Try different name matching methods
                 for m in interaction.guild.members:
@@ -776,8 +784,7 @@ async def view_feedback(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="vip_apply",
-                  description="Apply for Sweet Holes VIP Membership")
-async def vip_apply(interaction: discord.Interaction):
+                  description="Apply for Sweet Holes VIP Membership")async def vip_apply(interaction: discord.Interaction):
     """Shows the VIP application button interface."""
     try:
         # Check if command is used in correct channel
@@ -1565,7 +1572,7 @@ async def on_ready():
                     async def vip_callback(interaction: discord.Interaction):
                         if interaction.channel.id != 1337508682950377480:
                             await interaction.response.send_message(
-                                "❌ Wrong channel!", ephemeral=True)
+                                ""❌ Wrong channel!", ephemeral=True)
                             return
                         response_channel = channels['response']
                         modal = ApplicationModal(response_channel)
@@ -2018,7 +2025,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keepalive import keep_alive
+from keep_alive import keep_alive
 keep_alive()  # This starts the Flask server in a separate thread
 
 # Then continue with bot setup and execution
