@@ -629,6 +629,34 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
                                                     ephemeral=True)
 
 
+class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
+    user_id = discord.ui.TextInput(label="User ID", style=discord.TextStyle.short, placeholder="Enter user ID", required=True)
+    points = discord.ui.TextInput(label="Points", style=discord.TextStyle.short, placeholder="Enter points amount", required=True)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            user_id = int(self.user_id.value)
+            points = int(self.points.value)
+
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
+            result = c.fetchone()
+
+            if result and result[0] >= points:
+                c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, user_id))
+                conn.commit()
+                await interaction.response.send_message(f"✅ Removed {points} points from user {user_id}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"❌ User {user_id} does not have enough points.", ephemeral=True)
+            conn.close()
+        except ValueError:
+            await interaction.response.send_message("❌ Invalid input format", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ An error occurred: {e}", ephemeral=True)
+
+
+
 @bot.command()
 @is_admin()
 async def admin(ctx):
@@ -754,7 +782,7 @@ async def signup_rewards(interaction: discord.Interaction):
         c = conn.cursor()
 
         # Check if user already exists
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id, ))
+        c.execute("SELECT points FROM rewards WHERE user_id =?", (user_id, ))
         existing_user = c.fetchone()
 
         if existing_user:
@@ -1360,7 +1388,8 @@ async def on_ready():
             'redeem': bot.get_channel(1337508683684384847),
             'vendor': bot.get_channel(1337705856061407283),
             'complaints': bot.get_channel(1337644894558097408),
-            'suggestions': bot.get_channel(1337508683286052895)
+            'suggestions': bot.get_channel(1337508683286052895),
+            'points_management': bot.get_channel(1337710851108638750)
         }
 
         # Setup database
@@ -1554,29 +1583,41 @@ async def on_ready():
 
                         view = discord.ui.View(timeout=None)  # Make the view persistent
 
-                        add_button = discord.ui.Button(label="➕ Add Reward", style=discord.ButtonStyle.primary)
-                        remove_button = discord.ui.Button(label="🗑️ RemoveReward", style=discord.ButtonStyle.danger)
+                    # Points Management Channel setup
+                    points_management_channel = channels['points_management']
+                    if points_management_channel:
+                        await points_management_channel.purge(limit=100)
+                        embed = discord.Embed(
+                            title="🎮 Points Management",
+                            description="Add or remove points from users",
+                            color=discord.Color.blue())
 
-                        async def add_callback(interaction: discord.Interaction):
-                            if not any(role.name == "Partner" for role in interaction.user.roles):
-                                await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                        view = discord.ui.View(timeout=None)
+
+                        add_points_button = discord.ui.Button(label="➕ Add Points", style=discord.ButtonStyle.success)
+                        remove_points_button = discord.ui.Button(label="➖ Remove Points", style=discord.ButtonStyle.danger)
+
+                        async def add_points_callback(interaction: discord.Interaction):
+                            if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+                                await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                 return
-                            modal = VendorRewardModal()
+                            modal = GivePointsModal()
                             await interaction.response.send_modal(modal)
 
-                        async def remove_callback(interaction: discord.Interaction):
-                            if not any(role.name == "Partner" for role in interaction.user.roles):
-                                await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                        async def remove_points_callback(interaction: discord.Interaction):
+                            if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+                                await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                 return
-                            modal = RemoveVendorRewardModal()
+                            modal = RemovePointsModal()
                             await interaction.response.send_modal(modal)
 
-                        add_button.callback = add_callback
-                        remove_button.callback = remove_callback
+                        add_points_button.callback = add_points_callback
+                        remove_points_button.callback = remove_points_callback
 
-                        view.add_item(add_button)
-                        view.add_item(remove_button)
-                        await vendor_management_channel.send(embed=embed, view=view)
+                        view.add_item(add_points_button)
+                        view.add_item(remove_points_button)
+                        await points_management_channel.send(embed=embed, view=view)
+
                 elif channel_name == 'complaints':
                     await channel.purge(limit=100)  # Clear existing messages
                     embed = discord.Embed(
