@@ -52,6 +52,7 @@ setup_database()  # Ensures tables exist before the bot starts
 # Bot Setup
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Admin role name
