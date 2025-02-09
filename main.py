@@ -602,9 +602,9 @@ class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
 
 
 class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
-    username = discord.ui.TextInput(label="Username",
+    username = discord.ui.TextInput(label="Discord Name",
                                    style=discord.TextStyle.short,
-                                   placeholder="Enter username (e.g. user#1234)",
+                                   placeholder="Enter their Discord name",
                                    required=True)
     points = discord.ui.TextInput(label="Points",
                                   style=discord.TextStyle.short,
@@ -613,54 +613,66 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            # Find user by username
-            member = discord.utils.get(interaction.guild.members, name=self.username.value.split('#')[0])
+            # Find user by display name (nickname if set, otherwise username)
+            member = discord.utils.find(lambda m: m.display_name.lower() == self.username.value.lower(), interaction.guild.members)
             if not member:
-                await interaction.response.send_message("❌ User not found!", ephemeral=True)
-                return
-            user_id = member.id
+                # Try finding by username if display name fails
+                member = discord.utils.find(lambda m: m.name.lower() == self.username.value.lower(), interaction.guild.members)
+                if not member:
+                    await interaction.response.send_message("❌ User not found! Please use their Discord name", ephemeral=True)
+                    return
+            
             points = int(self.points.value)
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute(
                 "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
-                (user_id, points, interaction.guild.get_member(user_id).name, points)) #add username here
+                (member.id, points, member.display_name, points))
             conn.commit()
             conn.close()
 
             await interaction.response.send_message(
-                f"✅ Added {points} points to user {user_id}", ephemeral=True)
+                f"✅ Added {points} points to {member.display_name}", ephemeral=True)
         except ValueError:
             await interaction.response.send_message("❌ Invalid input format",
                                                     ephemeral=True)
 
 
 class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
-    username = discord.ui.TextInput(label="Username", style=discord.TextStyle.short, placeholder="Enter username (e.g. user#1234)", required=True)
-    points = discord.ui.TextInput(label="Points", style=discord.TextStyle.short, placeholder="Enter points amount", required=True)
+    username = discord.ui.TextInput(label="Discord Name", 
+                                   style=discord.TextStyle.short, 
+                                   placeholder="Enter their Discord name", 
+                                   required=True)
+    points = discord.ui.TextInput(label="Points", 
+                                  style=discord.TextStyle.short, 
+                                  placeholder="Enter points amount", 
+                                  required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            # Find user by username
-            member = discord.utils.get(interaction.guild.members, name=self.username.value.split('#')[0])
+            # Find user by display name (nickname if set, otherwise username)
+            member = discord.utils.find(lambda m: m.display_name.lower() == self.username.value.lower(), interaction.guild.members)
             if not member:
-                await interaction.response.send_message("❌ User not found!", ephemeral=True)
-                return
-            user_id = member.id
+                # Try finding by username if display name fails
+                member = discord.utils.find(lambda m: m.name.lower() == self.username.value.lower(), interaction.guild.members)
+                if not member:
+                    await interaction.response.send_message("❌ User not found! Please use their Discord name", ephemeral=True)
+                    return
+
             points = int(self.points.value)
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
             result = c.fetchone()
 
             if result and result[0] >= points:
-                c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, user_id))
+                c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, member.id))
                 conn.commit()
-                await interaction.response.send_message(f"✅ Removed {points} points from user {user_id}", ephemeral=True)
+                await interaction.response.send_message(f"✅ Removed {points} points from {member.display_name}", ephemeral=True)
             else:
-                await interaction.response.send_message(f"❌ User {user_id} does not have enough points.", ephemeral=True)
+                await interaction.response.send_message(f"❌ {member.display_name} does not have enough points.", ephemeral=True)
             conn.close()
         except ValueError:
             await interaction.response.send_message("❌ Invalid input format", ephemeral=True)
