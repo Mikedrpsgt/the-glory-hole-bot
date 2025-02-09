@@ -901,10 +901,11 @@ async def signup_rewards(interaction: discord.Interaction):
             conn.close()
             return
 
-        # Add new user to rewards
+        # Add new user to rewards with their display name
+        display_name = interaction.user.display_name
         c.execute(
             "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
-            (user_id, 50, "Flirty Bronze", interaction.user.name))
+            (user_id, 50, "Flirty Bronze", display_name))
         conn.commit()
         conn.close()
 
