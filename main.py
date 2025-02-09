@@ -352,7 +352,7 @@ class SuggestionView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
 
-    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
+    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="make_suggestion_button")
     async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.channel_id != 1337508683286052895:
             await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
@@ -1616,8 +1616,6 @@ async def on_ready():
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
-
-        async def redeem(interaction: discord.Interaction):
             if interaction.channel_id != 1337508683684384847:
                 await interaction.response.send_message(
                     "❌ This command can only be used in the rewards redemption channel!",
