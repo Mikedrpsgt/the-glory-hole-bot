@@ -602,25 +602,40 @@ class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
 
 
 class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
-    username = discord.ui.TextInput(label="Discord Name",
-                                   style=discord.TextStyle.short,
-                                   placeholder="Enter their Discord name",
-                                   required=True)
-    points = discord.ui.TextInput(label="Points",
-                                  style=discord.TextStyle.short,
-                                  placeholder="Enter points amount",
-                                  required=True)
+    def __init__(self):
+        super().__init__()
+        self.username = discord.ui.TextInput(
+            label="Discord Name",
+            style=discord.TextStyle.short,
+            placeholder="Enter their Discord name",
+            required=True
+        )
+        self.points = discord.ui.TextInput(
+            label="Points",
+            style=discord.TextStyle.short,
+            placeholder="Enter points amount",
+            required=True
+        )
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            # Find user by display name (nickname if set, otherwise username)
-            member = discord.utils.find(lambda m: m.display_name.lower() == self.username.value.lower(), interaction.guild.members)
+            # Get all guild members and their names
+            member_names = {m.name.lower(): m for m in interaction.guild.members}
+            member_display_names = {m.display_name.lower(): m for m in interaction.guild.members}
+            
+            # Try to find the member by name or display name
+            input_name = self.username.value.lower()
+            member = member_display_names.get(input_name) or member_names.get(input_name)
+            
             if not member:
-                # Try finding by username if display name fails
-                member = discord.utils.find(lambda m: m.name.lower() == self.username.value.lower(), interaction.guild.members)
-                if not member:
-                    await interaction.response.send_message("❌ User not found! Please use their Discord name", ephemeral=True)
-                    return
+                # If member not found, show available names
+                available_names = sorted(set(name.title() for name in member_names.keys() | member_display_names.keys()))
+                names_list = "\n".join(available_names[:10])  # Show first 10 names
+                await interaction.response.send_message(
+                    f"❌ User not found! Available members (first 10):\n{names_list}\n\nPlease use their exact Discord name.",
+                    ephemeral=True
+                )
+                return
 
             points = int(self.points.value)
 
