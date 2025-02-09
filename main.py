@@ -1572,7 +1572,7 @@ async def on_ready():
                     async def vip_callback(interaction: discord.Interaction):
                         if interaction.channel.id != 1337508682950377480:
                             await interaction.response.send_message(
-                                ""❌ Wrong channel!", ephemeral=True)
+                                "❌ Wrong channel!", ephemeral=True)
                             return
                         response_channel = channels['response']
                         modal = ApplicationModal(response_channel)
