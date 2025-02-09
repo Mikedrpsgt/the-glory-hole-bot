@@ -1207,7 +1207,21 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
                 "❌ Points cost must be a number!", ephemeral=True)
 
 
-# Vendor add command is now handled in on_ready
+@bot.tree.command(name="vendor_add", description="Add a new vendor reward")
+async def vendor_add(interaction: discord.Interaction):
+    if not any(role.name == "Partner" for role in interaction.user.roles):
+        await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
+        return
+    modal = VendorRewardModal()
+    await interaction.response.send_modal(modal)
+
+@bot.tree.command(name="vendor_remove", description="Remove a vendor reward")
+async def vendor_remove(interaction: discord.Interaction):
+    if not any(role.name == "Partner" for role in interaction.user.roles):
+        await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
+        return
+    modal = RemoveVendorRewardModal()
+    await interaction.response.send_modal(modal)
 
 # Add points command is now handled in on_ready
 
