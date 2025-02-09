@@ -799,7 +799,7 @@ async def vip_report(interaction: discord.Interaction):
     )
     orders_data = c.fetchone()
     daily_orders = orders_data[0] or 0
-    daily_items = orders_data[1] or0
+    daily_items = orders_data[1] or 0
 
     # Get point redemptions
     c.execute("SELECT COUNT(*) FROM rewards WHERE points > 0")
