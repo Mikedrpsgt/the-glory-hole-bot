@@ -209,7 +209,7 @@ class OrderView(View):
                     color=discord.Color.pink())
                 await interaction.response.send_message(embed=embed,
                                                         ephemeral=True)
-                
+
                 # Send notification to staff channel
                 staff_channel = interaction.client.get_channel(1337712800453230643)
                 if staff_channel:
@@ -1419,10 +1419,31 @@ async def on_ready():
                         "Click the button below to check your tier and points!",
                         color=discord.Color.pink())
                     view = discord.ui.View()
-                    view.add_item(
-                        discord.ui.Button(label="💝 Check My Tier",
-                                          style=discord.ButtonStyle.blurple,
-                                          custom_id="check_tier"))
+                    check_tier_button = discord.ui.Button(
+                        label="💝 Check My Tier",
+                        style=discord.ButtonStyle.blurple)
+
+                    async def check_tier_callback(interaction: discord.Interaction):
+                        if interaction.channel_id != 1337508683684384846:
+                            await interaction.response.send_message("❌ This command can only be used in the check tier channel!", ephemeral=True)
+                            return
+
+                        user_id = interaction.user.id
+                        conn = sqlite3.connect('orders.db')
+                        c = conn.cursor()
+                        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+                        result = c.fetchone()
+                        conn.close()
+
+                        tier, points = result if result else ("Flirty Bronze", 0)
+                        embed = discord.Embed(
+                            title="💖 Your VIP Sweet Holes Card 💖",
+                            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+                            color=discord.Color.pink())
+                        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+                    check_tier_button.callback = check_tier_callback
+                    view.add_item(check_tier_button)
                     await channel.send(embed=embed, view=view)
 
                 elif channel_name == 'vip':
