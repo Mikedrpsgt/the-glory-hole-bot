@@ -16,7 +16,7 @@ def setup_database():
 
     try:
         c.execute('BEGIN TRANSACTION')
-        
+
         # Create git push tracking table
         c.execute('''CREATE TABLE IF NOT EXISTS git_pushes
                      (push_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -952,46 +952,46 @@ class RedeemView(discord.ui.View):
                               color=discord.Color.gold())
 
         view = discord.ui.View()
-        
+
         for reward in rewards:
             embed.add_field(name=f"ID #{reward[0]}: {reward[2]} ({reward[3]} points)",
                             value=reward[4],
                             inline=False)
-            
+
             button = discord.ui.Button(
                 label=f"Claim {reward[2]}", 
                 style=discord.ButtonStyle.success, 
                 custom_id=f"claim_vendor_{reward[0]}"
             )
-            
+
             async def claim_callback(interaction: discord.Interaction, reward_id: int = reward[0]):
                 conn = sqlite3.connect('orders.db')
                 c = conn.cursor()
-                
+
                 # Get reward details
                 c.execute("SELECT * FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
                 reward_data = c.fetchone()
-                
+
                 if not reward_data:
                     await interaction.response.send_message("❌ Reward no longer available!", ephemeral=True)
                     conn.close()
                     return
-                
+
                 # Check user points
                 c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
                 user_points = c.fetchone()
-                
+
                 if not user_points or user_points[0] < reward_data[3]:
                     await interaction.response.send_message(f"❌ Not enough points! You need {reward_data[3]} points.", ephemeral=True)
                     conn.close()
                     return
-                
+
                 # Deduct points and log redemption
                 c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", 
                          (reward_data[3], interaction.user.id))
                 conn.commit()
                 conn.close()
-                
+
                 # Notify staff
                 staff_channel = interaction.client.get_channel(1337712800453230643)
                 if staff_channel:
@@ -1002,9 +1002,9 @@ class RedeemView(discord.ui.View):
                         timestamp=datetime.now()
                     )
                     await staff_channel.send(embed=log_embed)
-                
+
                 await interaction.response.send_message(f"✅ Successfully claimed {reward_data[2]}!", ephemeral=True)
-            
+
             button.callback = lambda i, r=reward[0]: claim_callback(i, r)
             view.add_item(button)
 
@@ -1206,27 +1206,27 @@ class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Rew
             reward_id = int(self.reward_id.value)
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             # Check if reward exists and belongs to the user
             c.execute("SELECT vendor_id FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
             result = c.fetchone()
-            
+
             if not result:
                 await interaction.response.send_message("❌ Reward not found!", ephemeral=True)
                 conn.close()
                 return
-                
+
             if result[0] != interaction.user.id:
                 await interaction.response.send_message("❌ You can only remove your own rewards!", ephemeral=True)
                 conn.close()
                 return
-            
+
             c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
             conn.commit()
             conn.close()
-            
+
             await interaction.response.send_message("✅ Reward removed successfully!", ephemeral=True)
-            
+
         except ValueError:
             await interaction.response.send_message("❌ Please enter a valid reward ID!", ephemeral=True)
 
@@ -1312,7 +1312,7 @@ async def on_member_join(member):
         print(f"⚠️ Bot lacks permission to assign roles to {member.name}")
     except Exception as e:
         print(f"❌ Error assigning role to {member.name}: {str(e)}")
-    
+
     welcome_channel = bot.get_channel(1337508682950377473)
     if welcome_channel:
         embed = discord.Embed(
@@ -1410,14 +1410,14 @@ async def on_reaction_add(reaction, user):
 async def git_pull(interaction: discord.Interaction):
     try:
         await interaction.response.defer(ephemeral=True)
-        
+
         # Execute git pull
         import subprocess
         process = subprocess.Popen(['git', 'pull'], 
                                  stdout=subprocess.PIPE, 
                                  stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        
+
         if process.returncode == 0:
             await interaction.followup.send("✅ Successfully pulled latest changes!", ephemeral=True)
         else:
@@ -1601,29 +1601,29 @@ async def on_ready():
                             title="🏪 Vendor Reward Management",
                             description="Click below to manage your vendor rewards!",
                             color=discord.Color.blue())
-                        
+
                         view = discord.ui.View(timeout=None)  # Make the view persistent
-                        
+
                         add_button = discord.ui.Button(label="➕ Add Reward", style=discord.ButtonStyle.primary)
-                        remove_button = discord.ui.Button(label="🗑️ Remove Reward", style=discord.ButtonStyle.danger)
-                        
+                        remove_button = discord.ui.Button(label="🗑️ RemoveReward", style=discord.ButtonStyle.danger)
+
                         async def add_callback(interaction: discord.Interaction):
                             if not any(role.name == "Partner" for role in interaction.user.roles):
                                 await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
                                 return
                             modal = VendorRewardModal()
                             await interaction.response.send_modal(modal)
-                            
+
                         async def remove_callback(interaction: discord.Interaction):
                             if not any(role.name == "Partner" for role in interaction.user.roles):
                                 await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
                                 return
                             modal = RemoveVendorRewardModal()
                             await interaction.response.send_modal(modal)
-                        
+
                         add_button.callback = add_callback
                         remove_button.callback = remove_callback
-                        
+
                         view.add_item(add_button)
                         view.add_item(remove_button)
                         await vendor_management_channel.send(embed=embed, view=view)
@@ -1756,62 +1756,20 @@ async def on_ready():
                     title="💡 Make a Suggestion",
                     description="Have an idea to make Sweet Holes even better? Click below!",
                     color=discord.Color.green())
-                view = discord.ui.View()
+                view = discord.ui.View(timeout=None)  # Make view persistent
                 suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
-                
-                async def suggest_callback(interaction: discord.Interaction):
-                    if interaction.channel_id != 1337706421545996399:
-                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
-                        return
-                    modal = SuggestionModal()
-                    await interaction.response.send_modal(modal)
-                
-                suggest_button.callback = suggest_callback
-                view.add_item(suggest_button)
-                await suggestion_channel.send(embed=embed, view=view)
-            
-            # Initialize complaint channel
-            complaint_channel = bot.get_channel(1337706481755095100)
-            if complaint_channel:
-                embed = discord.Embed(
-                    title="📝 File a Complaint",
-                    description="Having an issue? Let us know below.",
-                    color=discord.Color.red())
-                view = discord.ui.View()
-                complaint_button = discord.ui.Button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
-                
-                async def complaint_callback(interaction: discord.Interaction):
-                    if interaction.channel_id != 1337706481755095100:
-                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
-                        return
-                    modal = ComplaintModal()
-                    await interaction.response.send_modal(modal)
-                
-                complaint_button.callback = complaint_callback
-                view.add_item(complaint_button)
-                await complaint_channel.send(embed=embed, view=view)
 
-            # Initialize suggestion channel
-            suggestion_channel = bot.get_channel(1337706421545996399)
-            if suggestion_channel:
-                embed = discord.Embed(
-                    title="💡 Make a Suggestion",
-                    description="Have an idea to make Sweet Holes even better? Click below!",
-                    color=discord.Color.green())
-                view = discord.ui.View()
-                suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
-                
                 async def suggest_callback(interaction: discord.Interaction):
                     if interaction.channel_id != 1337706421545996399:
                         await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                         return
                     modal = SuggestionModal()
                     await interaction.response.send_modal(modal)
-                
+
                 suggest_button.callback = suggest_callback
                 view.add_item(suggest_button)
                 await suggestion_channel.send(embed=embed, view=view)
-            
+
             # Initialize complaint channel
             complaint_channel = bot.get_channel(1337706481755095100)
             if complaint_channel:
@@ -1819,16 +1777,16 @@ async def on_ready():
                     title="📝 File a Complaint",
                     description="Having an issue? Let us know below.",
                     color=discord.Color.red())
-                view = discord.ui.View()
+                view = discord.ui.View(timeout=None)  # Make view persistent
                 complaint_button = discord.ui.Button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
-                
+
                 async def complaint_callback(interaction: discord.Interaction):
                     if interaction.channel_id != 1337706481755095100:
                         await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
                         return
                     modal = ComplaintModal()
                     await interaction.response.send_modal(modal)
-                
+
                 complaint_button.callback = complaint_callback
                 view.add_item(complaint_button)
                 await complaint_channel.send(embed=embed, view=view)
