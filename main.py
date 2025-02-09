@@ -1748,7 +1748,7 @@ async def on_ready():
         }
         
         for channel in channels_to_purge:
-            if channel:
+            if channel and channel.id != 1337508682950377480:  # Skip membership channel
                 await channel.purge(limit=100)
 
         if menu_channel:
@@ -1776,7 +1776,6 @@ async def on_ready():
             await tier_channel.send(embed=embed)
 
         if membership_channel:
-            await membership_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💎 Sweet Holes Membership",
                 description="Welcome to our exclusive membership area!",
