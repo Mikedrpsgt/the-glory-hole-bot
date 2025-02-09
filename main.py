@@ -16,6 +16,14 @@ def setup_database():
 
     try:
         c.execute('BEGIN TRANSACTION')
+        
+        # Create git push tracking table
+        c.execute('''CREATE TABLE IF NOT EXISTS git_pushes
+                     (push_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                      commit_hash TEXT,
+                      commit_message TEXT,
+                      status TEXT)''')
 
         # Create tables if they don't exist
         c.execute('''CREATE TABLE IF NOT EXISTS orders 
