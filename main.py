@@ -1591,6 +1591,29 @@ async def on_ready():
                             title="🎮 Points Management",
                             description="Add or remove points from users",
                             color=discord.Color.blue())
+                            
+                        class PointsManagementView(discord.ui.View):
+                            def __init__(self):
+                                super().__init__(timeout=None)
+
+                            @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success)
+                            async def add_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+                                    await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+                                    return
+                                modal = GivePointsModal()
+                                await interaction.response.send_modal(modal)
+
+                            @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger)
+                            async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+                                    await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+                                    return
+                                modal = RemovePointsModal()
+                                await interaction.response.send_modal(modal)
+
+                        view = PointsManagementView()
+                        await points_management_channel.send(embed=embed, view=view)
 
                         class PointsManagementView(discord.ui.View):
                             def __init__(self):
