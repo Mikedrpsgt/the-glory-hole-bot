@@ -1675,6 +1675,49 @@ async def on_ready():
         # Clear existing messages and send new ones
         if menu_channel:
             await menu_channel.purge(limit=100)
+            # Initialize suggestion channel
+            suggestion_channel = bot.get_channel(1337706421545996399)
+            if suggestion_channel:
+                embed = discord.Embed(
+                    title="💡 Make a Suggestion",
+                    description="Have an idea to make Sweet Holes even better? Click below!",
+                    color=discord.Color.green())
+                view = discord.ui.View()
+                suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
+                
+                async def suggest_callback(interaction: discord.Interaction):
+                    if interaction.channel_id != 1337706421545996399:
+                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                        return
+                    modal = SuggestionModal()
+                    await interaction.response.send_modal(modal)
+                
+                suggest_button.callback = suggest_callback
+                view.add_item(suggest_button)
+                await suggestion_channel.send(embed=embed, view=view)
+            
+            # Initialize complaint channel
+            complaint_channel = bot.get_channel(1337706481755095100)
+            if complaint_channel:
+                embed = discord.Embed(
+                    title="📝 File a Complaint",
+                    description="Having an issue? Let us know below.",
+                    color=discord.Color.red())
+                view = discord.ui.View()
+                complaint_button = discord.ui.Button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
+                
+                async def complaint_callback(interaction: discord.Interaction):
+                    if interaction.channel_id != 1337706481755095100:
+                        await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                        return
+                    modal = ComplaintModal()
+                    await interaction.response.send_modal(modal)
+                
+                complaint_button.callback = complaint_callback
+                view.add_item(complaint_button)
+                await complaint_channel.send(embed=embed, view=view)
+
+            # Original menu channel setup
             embed = discord.Embed(
                 title="🎀 Sweet Holes Interactive Menu 🎀",
                 description="Click the buttons below to interact!",
