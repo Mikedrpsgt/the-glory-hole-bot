@@ -1922,6 +1922,10 @@ async def on_ready():
         print(f"❌ Startup Error: {str(e)}")
 
 
+# Import and start keepalive
+from keepalive import keep_alive
+keep_alive()
+
 # Run the bot
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not TOKEN:
