@@ -134,9 +134,30 @@ class ApplicationModal(discord.ui.Modal,
                             inline=False)
 
             await self.response_channel.send(embed=embed)
-            await interaction.response.send_message(
-                "✅ Your application has been submitted! We'll review it soon.",
-                ephemeral=True)
+            
+            # Add user to rewards table with welcome bonus
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            
+            # Check if user already exists in rewards
+            c.execute("SELECT user_id FROM rewards WHERE user_id = ?", (interaction.user.id,))
+            existing_user = c.fetchone()
+            
+            if not existing_user:
+                # Add new user with welcome bonus
+                c.execute(
+                    "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
+                    (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
+                conn.commit()
+                await interaction.response.send_message(
+                    "✅ Your application has been submitted! You've earned 50 welcome bonus points! 🎉",
+                    ephemeral=True)
+            else:
+                await interaction.response.send_message(
+                    "✅ Your application has been submitted! We'll review it soon.",
+                    ephemeral=True)
+            
+            conn.close()
         except Exception as e:
             print(f"Application Error: {str(e)}")
             await interaction.response.send_message(
