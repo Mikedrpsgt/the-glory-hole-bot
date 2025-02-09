@@ -602,20 +602,18 @@ class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
 
 
 class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
-    def __init__(self):
-        super().__init__()
-        self.username = discord.ui.TextInput(
-            label="Discord Name",
-            style=discord.TextStyle.short,
-            placeholder="Enter their Discord name",
-            required=True
-        )
-        self.points = discord.ui.TextInput(
-            label="Points",
-            style=discord.TextStyle.short,
-            placeholder="Enter points amount",
-            required=True
-        )
+    username = discord.ui.TextInput(
+        label="Discord Name",
+        style=discord.TextStyle.short,
+        placeholder="Enter their Discord name",
+        required=True
+    )
+    points = discord.ui.TextInput(
+        label="Points",
+        style=discord.TextStyle.short,
+        placeholder="Enter points amount",
+        required=True
+    )
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
