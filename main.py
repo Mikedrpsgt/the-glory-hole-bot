@@ -1230,7 +1230,7 @@ async def vendor_remove(interaction: discord.Interaction):
 async def on_member_join(member):
     """Sends a welcome message when a new member joins and assigns default role."""
     # Assign default Customer role
-    customer_role = discord.utils.get(member.guild.roles, name="Customer")
+    customer_role = discord.utils.get(member.guild.roles, name="Customers")
     if customer_role:
         await member.add_roles(customer_role)
     
