@@ -1217,6 +1217,9 @@ async def vendor_add(interaction: discord.Interaction):
 
 @bot.tree.command(name="vendor_remove", description="Remove a vendor reward")
 async def vendor_remove(interaction: discord.Interaction):
+    if interaction.channel_id != 1337709954336952391:
+        await interaction.response.send_message("❌ This command can only be used in the vendor management channel!", ephemeral=True)
+        return
     if not any(role.name == "Partner" for role in interaction.user.roles):
         await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
         return
