@@ -621,7 +621,7 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
                 if not member:
                     await interaction.response.send_message("❌ User not found! Please use their Discord name", ephemeral=True)
                     return
-            
+
             points = int(self.points.value)
 
             conn = sqlite3.connect('orders.db')
