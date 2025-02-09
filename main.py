@@ -1563,11 +1563,13 @@ async def on_ready():
                         view.add_item(remove_button)
                         await vendor_management_channel.send(embed=embed, view=view)
                 elif channel_name == 'complaints':
+                    await channel.purge(limit=100)
                     embed = discord.Embed(
                         title="📝 File a Complaint",
                         description="Having an issue? Let us know below.",
                         color=discord.Color.red())
-                    await channel.send(embed=embed, view=ComplaintView())
+                    complaint_view = ComplaintView()
+                    await channel.send(embed=embed, view=complaint_view)
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
