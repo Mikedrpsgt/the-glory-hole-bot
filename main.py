@@ -342,6 +342,7 @@ class MenuView(View):
     async def daily_reward(self, interaction: discord.Interaction,
                            button: Button):
         try:
+            await interaction.response.defer(ephemeral=True)
             user_id = interaction.user.id
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
