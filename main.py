@@ -1993,7 +1993,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keep_alive import keep_alive
+from keepalive import keep_alive
 keep_alive()  # This starts the Flask server in a separate thread
 
 # Then continue with bot setup and execution
