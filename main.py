@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from discord.ui import View, Button
+from discord.errors import LoginFailure, PrivilegedIntentsRequired
 import sqlite3
 import os
 import asyncio
@@ -1913,10 +1914,23 @@ async def on_ready():
 # Run the bot
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not TOKEN:
-    print("❌ Error: No Discord bot token found! Make sure DISCORD_BOT_TOKEN is set in the Secrets tab.")
+    print("❌ Error: No Discord bot token found! Please add DISCORD_BOT_TOKEN in the Secrets tab.")
     exit(1)
+
+# Validate token format
+if not TOKEN.strip().startswith(('M', 'N', 'O')):
+    print("❌ Error: Invalid Discord bot token format. Please check your token in the Secrets tab.")
+    exit(1)
+
 try:
-    bot.run(TOKEN)
+    bot.run(TOKEN.strip())  # Remove any whitespace
+except discord.LoginFailure:
+    print("❌ Error: Failed to login. Invalid Discord bot token.")
+    exit(1)
+except discord.PrivilegedIntentsRequired:
+    print("❌ Error: Required privileged intents are not enabled for this bot.")
+    print("Please enable the necessary intents in the Discord Developer Portal.")
+    exit(1)
 except Exception as e:
     print(f"❌ Failed to start bot: {str(e)}")
     exit(1)
