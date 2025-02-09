@@ -1563,7 +1563,7 @@ async def on_ready():
                         view.add_item(remove_button)
                         await vendor_management_channel.send(embed=embed, view=view)
                 elif channel_name == 'complaints':
-                    await channel.purge(limit=100)
+                    await channel.purge(limit=100)  # Clear existing messages
                     embed = discord.Embed(
                         title="📝 File a Complaint",
                         description="Having an issue? Let us know below.",
@@ -1588,8 +1588,7 @@ async def on_ready():
         async def vendor_add(interaction: discord.Interaction):
             if not any(role.name == "Partner"
                        for role in interaction.user.roles):
-                await interaction.response.send_message(
-                    "❌ You need the Partner role to use this command!",
+                await interaction.response.send_message("❌ You need the Partner role to use this command!",
                     ephemeral=True)
                 return
             await show_vendor_add_menu(interaction)
