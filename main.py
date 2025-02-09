@@ -1633,6 +1633,19 @@ async def on_ready():
                                 title="💡 Make a Suggestion",
                                 description="Have an idea to make Sweet Holes even better? Share it with us!",
                                 color=discord.Color.green())
+                            
+                            class SuggestionView(discord.ui.View):
+                                def __init__(self):
+                                    super().__init__(timeout=None)
+                                
+                                @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
+                                async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                                    if interaction.channel_id != 1337508683286052895:
+                                        await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
+                                        return
+                                    modal = SuggestionModal()
+                                    await interaction.response.send_modal(modal)
+                            
                             view = SuggestionView()
                             await suggestions_channel.send(embed=embed, view=view)
                             print("✅ Suggestions button setup complete")
