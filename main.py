@@ -1637,4 +1637,11 @@ async def on_ready():
 
 # Run the bot
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-bot.run(TOKEN)
+if not TOKEN:
+    print("❌ Error: No Discord bot token found! Make sure DISCORD_BOT_TOKEN is set in your environment variables.")
+    exit(1)
+try:
+    bot.run(TOKEN)
+except Exception as e:
+    print(f"❌ Failed to start bot: {str(e)}")
+    exit(1)
