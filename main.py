@@ -602,9 +602,9 @@ class UpdateOrderModal(discord.ui.Modal, title="📝 Update Order Status"):
 
 
 class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
-    user_id = discord.ui.TextInput(label="User ID",
+    username = discord.ui.TextInput(label="Username",
                                    style=discord.TextStyle.short,
-                                   placeholder="Enter user ID",
+                                   placeholder="Enter username (e.g. user#1234)",
                                    required=True)
     points = discord.ui.TextInput(label="Points",
                                   style=discord.TextStyle.short,
@@ -613,7 +613,12 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            user_id = int(self.user_id.value)
+            # Find user by username
+            member = discord.utils.get(interaction.guild.members, name=self.username.value.split('#')[0])
+            if not member:
+                await interaction.response.send_message("❌ User not found!", ephemeral=True)
+                return
+            user_id = member.id
             points = int(self.points.value)
 
             conn = sqlite3.connect('orders.db')
@@ -632,12 +637,17 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
 
 class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
-    user_id = discord.ui.TextInput(label="User ID", style=discord.TextStyle.short, placeholder="Enter user ID", required=True)
+    username = discord.ui.TextInput(label="Username", style=discord.TextStyle.short, placeholder="Enter username (e.g. user#1234)", required=True)
     points = discord.ui.TextInput(label="Points", style=discord.TextStyle.short, placeholder="Enter points amount", required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            user_id = int(self.user_id.value)
+            # Find user by username
+            member = discord.utils.get(interaction.guild.members, name=self.username.value.split('#')[0])
+            if not member:
+                await interaction.response.send_message("❌ User not found!", ephemeral=True)
+                return
+            user_id = member.id
             points = int(self.points.value)
 
             conn = sqlite3.connect('orders.db')
@@ -1175,10 +1185,6 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
                                        style=discord.TextStyle.long,
                                        placeholder="Describe the reward...",
                                        required=True)
-
-    username = discord.ui.TextInput(label="Username",
-                                    placeholder="Enter the username of the recipient",
-                                    required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
