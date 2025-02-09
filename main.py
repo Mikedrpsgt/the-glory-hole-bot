@@ -1001,16 +1001,34 @@ class RedeemView(discord.ui.View):
 
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
+        
+        # Verify current points and deduct
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+        current_points = c.fetchone()
+        
+        if not current_points or current_points[0] < cost:
+            await interaction.response.send_message(
+                "❌ Insufficient points for this redemption.",
+                ephemeral=True)
+            conn.close()
+            return
+            
         c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?",
                   (cost, interaction.user.id))
         conn.commit()
+        
+        # Get updated points
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+        new_points = c.fetchone()[0]
         conn.close()
 
         # Send confirmation to user
         user_embed = discord.Embed(
             title="🎉 Reward Redeemed!",
             description=
-            f"Successfully redeemed **{item}** for {cost} points!\nA staff member will contact you soon!",
+            f"Successfully redeemed **{item}** for {cost} points!\n"
+            f"Remaining points: **{new_points}**\n"
+            f"A staff member will contact you soon!",
             color=discord.Color.green())
         await interaction.response.send_message(embed=user_embed,
                                                 ephemeral=True)
