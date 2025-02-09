@@ -1565,7 +1565,8 @@ async def on_ready():
                     await channel.send(embed=embed, view=complaint_view)
 
                 elif channel_name == 'suggestions':
-                    await channel.purge(limit=100)
+                    suggestions_channel = bot.get_channel(1337508683286052895)
+                    await suggestions_channel.purge(limit=100)
                     embed = discord.Embed(
                         title="💡 Make a Suggestion",
                         description="Have an idea to make Sweet Holes even better? Share it with us!",
@@ -1582,7 +1583,7 @@ async def on_ready():
 
                     suggest_button.callback = suggest_callback
                     suggestion_view.add_item(suggest_button)
-                    await channel.send(embed=embed, view=suggestion_view)
+                    await suggestions_channel.send(embed=embed, view=suggestion_view)
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
