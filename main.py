@@ -295,6 +295,16 @@ class MenuView(View):
     def __init__(self):
         super().__init__()
 
+    @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
+    async def file_complaint(self, interaction: discord.Interaction, button: Button):
+        modal = ComplaintModal()
+        await interaction.response.send_modal(modal)
+
+    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
+    async def make_suggestion(self, interaction: discord.Interaction, button: Button):
+        modal = SuggestionModal()
+        await interaction.response.send_modal(modal)
+
     @discord.ui.button(label="💋 Flirt", style=discord.ButtonStyle.danger)
     async def flirt(self, interaction: discord.Interaction, button: Button):
         line = random.choice(PICKUP_LINES)
@@ -938,15 +948,67 @@ class RedeemView(discord.ui.View):
             return
 
         embed = discord.Embed(title="🏪 Available Vendor Rewards",
-                              description="Choose a reward to redeem:",
+                              description="Click the buttons below to claim rewards:",
                               color=discord.Color.gold())
 
+        view = discord.ui.View()
+        
         for reward in rewards:
-            embed.add_field(name=f"{reward[2]} ({reward[3]} points)",
+            embed.add_field(name=f"ID #{reward[0]}: {reward[2]} ({reward[3]} points)",
                             value=reward[4],
                             inline=False)
+            
+            button = discord.ui.Button(
+                label=f"Claim {reward[2]}", 
+                style=discord.ButtonStyle.success, 
+                custom_id=f"claim_vendor_{reward[0]}"
+            )
+            
+            async def claim_callback(interaction: discord.Interaction, reward_id: int = reward[0]):
+                conn = sqlite3.connect('orders.db')
+                c = conn.cursor()
+                
+                # Get reward details
+                c.execute("SELECT * FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+                reward_data = c.fetchone()
+                
+                if not reward_data:
+                    await interaction.response.send_message("❌ Reward no longer available!", ephemeral=True)
+                    conn.close()
+                    return
+                
+                # Check user points
+                c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+                user_points = c.fetchone()
+                
+                if not user_points or user_points[0] < reward_data[3]:
+                    await interaction.response.send_message(f"❌ Not enough points! You need {reward_data[3]} points.", ephemeral=True)
+                    conn.close()
+                    return
+                
+                # Deduct points and log redemption
+                c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", 
+                         (reward_data[3], interaction.user.id))
+                conn.commit()
+                conn.close()
+                
+                # Notify staff
+                staff_channel = interaction.client.get_channel(1337712800453230643)
+                if staff_channel:
+                    log_embed = discord.Embed(
+                        title="🏪 Vendor Reward Claimed",
+                        description=f"User: {interaction.user.mention}\nReward: {reward_data[2]}\nPoints: {reward_data[3]}",
+                        color=discord.Color.gold(),
+                        timestamp=datetime.now()
+                    )
+                    await staff_channel.send(embed=log_embed)
+                
+                await interaction.response.send_message(f"✅ Successfully claimed {reward_data[2]}!", ephemeral=True)
+            
+            button.callback = lambda i, r=reward[0]: claim_callback(i, r)
+            view.add_item(button)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     async def process_redemption(self, interaction: discord.Interaction,
                                  cost: int, item: str):
@@ -983,6 +1045,80 @@ class RedeemView(discord.ui.View):
                 timestamp=datetime.now())
             await log_channel.send(embed=log_embed)
 
+
+class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
+    complaint = discord.ui.TextInput(
+        label="Your Complaint",
+        style=discord.TextStyle.long,
+        placeholder="Please describe your complaint in detail...",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute('''CREATE TABLE IF NOT EXISTS complaints
+                        (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         user_id INTEGER,
+                         complaint TEXT,
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+            c.execute("INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
+                     (interaction.user.id, self.complaint.value))
+            conn.commit()
+            conn.close()
+
+            # Send to staff channel
+            staff_channel = interaction.client.get_channel(1337712800453230643)
+            if staff_channel:
+                embed = discord.Embed(
+                    title="⚠️ New Complaint Filed",
+                    description=f"From: {interaction.user.mention}\n\n{self.complaint.value}",
+                    color=discord.Color.red(),
+                    timestamp=datetime.now()
+                )
+                await staff_channel.send(embed=embed)
+
+            await interaction.response.send_message("✅ Your complaint has been filed and will be reviewed by staff.", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message("❌ An error occurred while filing your complaint.", ephemeral=True)
+
+class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
+    suggestion = discord.ui.TextInput(
+        label="Your Suggestion",
+        style=discord.TextStyle.long,
+        placeholder="Share your ideas with us...",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute('''CREATE TABLE IF NOT EXISTS suggestions
+                        (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         user_id INTEGER,
+                         suggestion TEXT,
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+            c.execute("INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
+                     (interaction.user.id, self.suggestion.value))
+            conn.commit()
+            conn.close()
+
+            # Send to staff channel
+            staff_channel = interaction.client.get_channel(1337712800453230643)
+            if staff_channel:
+                embed = discord.Embed(
+                    title="💡 New Suggestion Received",
+                    description=f"From: {interaction.user.mention}\n\n{self.suggestion.value}",
+                    color=discord.Color.green(),
+                    timestamp=datetime.now()
+                )
+                await staff_channel.send(embed=embed)
+
+            await interaction.response.send_message("✅ Thank you for your suggestion!", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message("❌ An error occurred while submitting your suggestion.", ephemeral=True)
 
 class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Reward"):
     reward_id = discord.ui.TextInput(
