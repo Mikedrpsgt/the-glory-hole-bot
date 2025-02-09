@@ -1598,7 +1598,7 @@ async def on_ready():
 
                             @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success, custom_id="add_points_persistent")
                             async def add_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+                                if not (discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME) or discord.utils.get(interaction.user.roles, name="Owner")):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                     return
                                 modal = GivePointsModal()
@@ -1606,7 +1606,7 @@ async def on_ready():
 
                             @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger, custom_id="remove_points_persistent")
                             async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
+                                if not (discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME) or discord.utils.get(interaction.user.roles, name="Owner")):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                     return
                                 modal = RemovePointsModal()
