@@ -342,6 +342,7 @@ class MenuView(View):
     async def daily_reward(self, interaction: discord.Interaction,
                            button: Button):
         try:
+            await interaction.response.defer(ephemeral=True)
             user_id = interaction.user.id
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
@@ -356,7 +357,7 @@ class MenuView(View):
 
                 if time_diff.total_seconds() < 86400:  # 24 hours in seconds
                     hours_left = 24 - (time_diff.total_seconds() / 3600)
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         f"⏰ Hold up sweetie! You can claim again in {int(hours_left)} hours!",
                         ephemeral=True)
                     conn.close()
@@ -365,25 +366,26 @@ class MenuView(View):
             bonus_points = random.randint(5, 15)
             current_points = result[1] if result else 0
 
-            if result:
-                c.execute(
-                    "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
-                    (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
-            else:
+            # Handle new users
+            if not result:
                 c.execute(
                     "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
                     (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
+            else:
+                c.execute(
+                    "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
+                    (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
 
             conn.commit()
             conn.close()
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"🎉 **Daily Reward Claimed!** You earned **+{bonus_points} points!**\nTotal points: {current_points + bonus_points}",
                 ephemeral=True)
         except Exception as e:
             if 'conn' in locals():
                 conn.close()
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ Something went wrong with the daily reward. Please try again!",
                 ephemeral=True)
 
