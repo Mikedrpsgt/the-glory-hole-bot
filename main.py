@@ -1583,7 +1583,7 @@ async def on_ready():
 
                         view = discord.ui.View(timeout=None)  # Make the view persistent
 
-                    # Points Management Channel setup
+                elif channel_name == 'points_management':
                     points_management_channel = channels['points_management']
                     if points_management_channel:
                         await points_management_channel.purge(limit=100)
