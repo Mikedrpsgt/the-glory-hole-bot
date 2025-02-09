@@ -565,7 +565,7 @@ class AdminView(View):
             embed.add_field(
                 name=f"Order #{order[0]}",
                 value=
-                f"User: {username}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
+                f"User: {username} (<@{order[1]}>)\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
                 inline=False)
         await interaction.response.send_message(embed=embed)
 
