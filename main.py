@@ -775,7 +775,7 @@ async def vip_apply(interaction: discord.Interaction):
                                             ephemeral=True)
 
 
-@bot.tree.command(name="signup_rewards,
+@bot.tree.command(name="signup_rewards",
                   description="Sign up for Sweet Holes rewards program")
 async def signup_rewards(interaction: discord.Interaction):
     try:
