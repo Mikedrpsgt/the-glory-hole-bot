@@ -32,7 +32,7 @@ def setup_database():
                       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards 
-                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
+                     (user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0, loyalty_tier TEXT DEFAULT 'Flirty Bronze',
                       last_daily TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS feedback 
@@ -439,7 +439,7 @@ async def daily(interaction: discord.Interaction):
 
         try:
             c.execute('''CREATE TABLE IF NOT EXISTS rewards
-                        (user_id INTEGER PRIMARY KEY,
+                        (user_id INTEGER PRIMARY KEY, username TEXT,
                          points INTEGER DEFAULT 0,
                          loyalty_tier TEXT DEFAULT 'Flirty Bronze',
                          last_daily TIMESTAMP)''')
@@ -453,8 +453,8 @@ async def daily(interaction: discord.Interaction):
                 # New user welcome bonus with animation
                 bonus_points = random.randint(1, 40)
                 c.execute(
-                    "INSERT INTO rewards (user_id, points, last_daily) VALUES (?, ?, ?)",
-                    (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S')))
+                    "INSERT INTO rewards (user_id, points, last_daily, username) VALUES (?, ?, ?, ?)",
+                    (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), interaction.user.name))
                 conn.commit()
 
                 reward_msg = await interaction.followup.send(
@@ -560,10 +560,12 @@ class AdminView(View):
 
         embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
         for order in orders:
+            member = interaction.guild.get_member(order[1])
+            username = member.name if member else "Unknown User"  # Handle cases where member is not found
             embed.add_field(
                 name=f"Order #{order[0]}",
                 value=
-                f"User: {order[1]}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
+                f"User: {username}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
                 inline=False)
         await interaction.response.send_message(embed=embed)
 
@@ -617,8 +619,8 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute(
-                "INSERT INTO rewards (user_id, points) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
-                (user_id, points, points))
+                "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?",
+                (user_id, points, interaction.guild.get_member(user_id).name, points)) #add username here
             conn.commit()
             conn.close()
 
@@ -681,10 +683,12 @@ async def view_all_orders(interaction: discord.Interaction):
 
     embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
     for order in orders:
+        member = interaction.guild.get_member(order[1])
+        username = member.name if member else "Unknown User" #Handle cases where member is not found
         embed.add_field(
             name=f"Order #{order[0]}",
             value=
-            f"User: {order[1]}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
+            f"User: {username}\nItem: {order[2]}\nQuantity: {order[3]}\nStatus: {order[4]}",
             inline=False)
     await interaction.response.send_message(embed=embed)
 
@@ -771,7 +775,7 @@ async def vip_apply(interaction: discord.Interaction):
                                             ephemeral=True)
 
 
-@bot.tree.command(name="signup_rewards",
+@bot.tree.command(name="signup_rewards,
                   description="Sign up for Sweet Holes rewards program")
 async def signup_rewards(interaction: discord.Interaction):
     try:
@@ -794,8 +798,8 @@ async def signup_rewards(interaction: discord.Interaction):
 
         # Add new user to rewards
         c.execute(
-            "INSERT INTO rewards (user_id, points, loyalty_tier) VALUES (?, ?, ?)",
-            (user_id, 50, "Flirty Bronze"))
+            "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
+            (user_id, 50, "Flirty Bronze", interaction.user.name))
         conn.commit()
         conn.close()
 
@@ -1308,11 +1312,11 @@ async def on_message(message):
     c = conn.cursor()
 
     c.execute(
-        """INSERT INTO rewards (user_id, points) 
-                 VALUES (?, ?) 
+        """INSERT INTO rewards (user_id, points, username) 
+                 VALUES (?, ?, ?) 
                  ON CONFLICT(user_id) 
                  DO UPDATE SET points = points + ?""",
-        (user_id, points, points))
+        (user_id, points, message.author.name, points))
 
     conn.commit()
     conn.close()
@@ -1332,11 +1336,11 @@ async def on_reaction_add(reaction, user):
     c = conn.cursor()
 
     c.execute(
-        """INSERT INTO rewards (user_id, points) 
-                 VALUES (?, ?) 
+        """INSERT INTO rewards (user_id, points, username) 
+                 VALUES (?, ?, ?) 
                  ON CONFLICT(user_id) 
                  DO UPDATE SET points = points + ?""",
-        (user.id, points, points))
+        (user.id, points, user.name, points))
 
     conn.commit()
     conn.close()
@@ -1403,7 +1407,7 @@ async def on_ready():
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards
-                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                     (user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0,
                       loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)'''
                   )
 
@@ -1591,7 +1595,7 @@ async def on_ready():
                             title="🎮 Points Management",
                             description="Add or remove points from users",
                             color=discord.Color.blue())
-                            
+
                         class PointsManagementView(discord.ui.View):
                             def __init__(self):
                                 super().__init__(timeout=None)
@@ -1633,11 +1637,11 @@ async def on_ready():
                                 title="💡 Make a Suggestion",
                                 description="Have an idea to make Sweet Holes even better? Share it with us!",
                                 color=discord.Color.green())
-                            
+
                             class SuggestionView(discord.ui.View):
                                 def __init__(self):
                                     super().__init__(timeout=None)
-                                
+
                                 @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
                                 async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                                     if interaction.channel_id != 1337508683286052895:
@@ -1645,7 +1649,7 @@ async def on_ready():
                                         return
                                     modal = SuggestionModal()
                                     await interaction.response.send_modal(modal)
-                            
+
                             view = SuggestionView()
                             await suggestions_channel.send(embed=embed, view=view)
                             print("✅ Suggestions button setup complete")
@@ -1726,7 +1730,7 @@ async def on_ready():
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards
-                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
+                     (user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0,
                       loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP)'''
                   )
 
