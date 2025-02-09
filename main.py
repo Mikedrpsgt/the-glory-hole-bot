@@ -1473,6 +1473,80 @@ async def on_reaction_add(reaction, user):
     conn.close()
 
 
+@bot.tree.command(name="add_points", description="Add points to a member")
+@is_admin()
+async def add_points(interaction: discord.Interaction, member: discord.Member, points: int):
+    try:
+        if points <= 0:
+            await interaction.response.send_message("❌ Points must be positive!", ephemeral=True)
+            return
+            
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Add points and update username
+        c.execute(
+            "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
+            (member.id, points, member.display_name, points, member.display_name)
+        )
+        
+        # Get new total
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+        new_total = c.fetchone()[0]
+        
+        conn.commit()
+        conn.close()
+        
+        await interaction.response.send_message(
+            f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
+            ephemeral=True
+        )
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+
+@bot.tree.command(name="remove_points", description="Remove points from a member")
+@is_admin()
+async def remove_points(interaction: discord.Interaction, member: discord.Member, points: int):
+    try:
+        if points <= 0:
+            await interaction.response.send_message("❌ Points must be positive!", ephemeral=True)
+            return
+            
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+        
+        # Check current points
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+        result = c.fetchone()
+        
+        if not result or result[0] < points:
+            await interaction.response.send_message(
+                f"❌ {member.display_name} doesn't have enough points to remove!",
+                ephemeral=True
+            )
+            conn.close()
+            return
+            
+        # Remove points and update username
+        c.execute(
+            "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
+            (points, member.display_name, member.id)
+        )
+        
+        # Get new total
+        c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+        new_total = c.fetchone()[0]
+        
+        conn.commit()
+        conn.close()
+        
+        await interaction.response.send_message(
+            f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
+            ephemeral=True
+        )
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+
 @bot.tree.command(name="git_pull", description="Pull latest changes from GitHub repository")
 @is_admin()
 async def git_pull(interaction: discord.Interaction):
