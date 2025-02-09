@@ -1228,7 +1228,12 @@ async def vendor_remove(interaction: discord.Interaction):
 
 @bot.event
 async def on_member_join(member):
-    """Sends a welcome message when a new member joins."""
+    """Sends a welcome message when a new member joins and assigns default role."""
+    # Assign default Customer role
+    customer_role = discord.utils.get(member.guild.roles, name="Customer")
+    if customer_role:
+        await member.add_roles(customer_role)
+    
     welcome_channel = bot.get_channel(1337508682950377473)
     if welcome_channel:
         embed = discord.Embed(
