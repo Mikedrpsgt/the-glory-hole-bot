@@ -353,17 +353,14 @@ class MenuView(View):
             current_time = datetime.now()
             if result and result[0]:
                 last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
-                time_diff = current_time - last_claim
-
-                if time_diff.total_seconds() < 86400:  # 24 hours in seconds
-                    hours_left = 24 - (time_diff.total_seconds() / 3600)
+                if current_time.date() == last_claim.date():
                     await interaction.followup.send(
-                        f"⏰ Hold up sweetie! You can claim again in {int(hours_left)} hours!",
+                        "⏰ Hold up sweetie! You've already claimed your daily reward today! Come back tomorrow! 💖",
                         ephemeral=True)
                     conn.close()
                     return
 
-            bonus_points = random.randint(5, 15)
+            bonus_points = random.randint(1, 40)
             current_points = result[1] if result else 0
 
             # Handle new users
