@@ -1922,11 +1922,11 @@ async def on_ready():
         print(f"❌ Startup Error: {str(e)}")
 
 
-# Import and start keepalive
+# Start the keep_alive server first
 from keepalive import keep_alive
-keep_alive()
+keep_alive()  # This starts the Flask server in a separate thread
 
-# Run the bot
+# Then run the bot
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not TOKEN:
     print("❌ Error: No Discord bot token found! Please add DISCORD_BOT_TOKEN in the Secrets tab.")
