@@ -352,7 +352,7 @@ class SuggestionView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
 
-    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
+    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="make_suggestion_button")
     async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.channel_id != 1337508683286052895:
             await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
@@ -1461,7 +1461,18 @@ async def on_ready():
                     embed = discord.Embed(
                         title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
                         description=
-                        "Join our exclusive VIP program and unlock special perks!",
+                        "Join our exclusive VIP program and unlock special perks!\n"
+                        "🍩 Sweet Rewards Loyalty Program 🍩\n\n"
+                        "🎁 Core Benefits (Available to all members)\n"
+                        :52988babypinkarrowright: Free Donut- Earn a free donut as soon as you sign up 
+                        :52988babypinkarrowright:Free Item Rewards – Earn points with every purchase and redeem them for free donuts, coffee, or specialty treats.
+                        :52988babypinkarrowright:In-Store Discounts – Enjoy an automatic 10% off all in-store purchases.
+                        :52988babypinkarrowright:Exclusive Preorder Perks – Get a 15% discount when preordering for pickup or catering.
+
+                        🎟️ Extra Perks & Partner Benefits
+                        :52988babypinkarrowright:Partnered Business Coupons – Receive monthly discount coupons for nearby restaurants, coffee shops, and local businesses.
+                        :52988babypinkarrowright:Monthly Raffles – Members are automatically entered into a drawing for free treats, gift cards, or exclusive merchandise.
+                        :52988babypinkarrowright:Event Invites – Get access to special events hosted by our partner businesses, such as tastings, live music nights, or exclusive product launches,
                         color=discord.Color.gold())
                     view = discord.ui.View()
                     vip_button = discord.ui.Button(
@@ -1604,8 +1615,6 @@ async def on_ready():
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
-
-        async def redeem(interaction: discord.Interaction):
             if interaction.channel_id != 1337508683684384847:
                 await interaction.response.send_message(
                     "❌ This command can only be used in the rewards redemption channel!",
