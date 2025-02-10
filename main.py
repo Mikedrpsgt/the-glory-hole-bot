@@ -75,10 +75,9 @@ ADMIN_ROLE_NAME = "Sweet Holes Admin"
 
 
 def is_admin():
-
     async def predicate(ctx):
-        return discord.utils.get(ctx.author.roles,
-                                 name=ADMIN_ROLE_NAME) is not None
+        return discord.utils.get(ctx.author.roles, name=ADMIN_ROLE_NAME) is not None or \
+               discord.utils.get(ctx.author.roles, name="Owner") is not None
 
     return commands.check(predicate)
 
