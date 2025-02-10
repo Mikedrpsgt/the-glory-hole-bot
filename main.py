@@ -1801,15 +1801,22 @@ async def git_pull(interaction: discord.Interaction):
 
 @bot.event 
 async def on_interaction_error(interaction: discord.Interaction, error: Exception):
-    if isinstance(error, discord.InteractionResponded):
-        return  # Interaction was already responded to
-    elif isinstance(error, discord.NotFound):
-        try:
+    try:
+        if isinstance(error, discord.InteractionResponded):
+            return  # Interaction was already responded to
+        elif isinstance(error, discord.NotFound):
             await interaction.response.send_message("This interaction has expired. Please try again.", ephemeral=True)
-        except:
-            pass  # If we can't respond, ignore it
-    else:
-        print(f"Interaction error: {str(error)}")
+        elif isinstance(error, discord.Forbidden):
+            await interaction.response.send_message("I don't have permission to perform this action.", ephemeral=True)
+        elif isinstance(error, discord.HTTPException):
+            await interaction.response.send_message("There was an error processing your request. Please try again.", ephemeral=True)
+        else:
+            await interaction.response.send_message("An unexpected error occurred. Please try again.", ephemeral=True)
+            print(f"Interaction error: {str(error)}")
+    except discord.InteractionResponded:
+        pass  # If we already responded, ignore it
+    except Exception as e:
+        print(f"Error handling interaction error: {str(e)}")
 
 @bot.event
 async def on_ready():
