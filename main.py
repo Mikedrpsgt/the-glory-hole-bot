@@ -118,24 +118,25 @@ class ApplicationModal(discord.ui.Modal,
             # Add user to rewards program first
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute(
-                "INSERT OR IGNORE INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
-                (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
-            conn.commit()
+            
+            # Check if user already exists in rewards
+            c.execute("SELECT user_id FROM rewards WHERE user_id = ?", (interaction.user.id,))
+            existing_user = c.fetchone()
+
+            if not existing_user:
+                c.execute(
+                    "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
+                    (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
+                conn.commit()
+            
             conn.close()
 
             # Assign VIP role
-            try:
-                vip_role = interaction.guild.get_role(1337508682417700961)
-                if vip_role:
-                    await interaction.user.add_roles(vip_role)
-                else:
-                    print("VIP role not found!")
-            except Exception as e:
-                print(f"Error assigning VIP role: {str(e)}")
-
-            # Send notification to VIP channel
-            try:
+            vip_role = interaction.guild.get_role(1337508682417700961)
+            if vip_role:
+                await interaction.user.add_roles(vip_role)
+                
+                # Send notification to VIP channel
                 vip_channel = interaction.client.get_channel(1337646191994867772)
                 if vip_channel:
                     welcome_embed = discord.Embed(
@@ -143,60 +144,19 @@ class ApplicationModal(discord.ui.Modal,
                         description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
                         color=discord.Color.gold())
                     await vip_channel.send(embed=welcome_embed)
-            except Exception as e:
-                print(f"Error sending welcome message: {str(e)}")
-
-            # Respond to user
-            await interaction.response.send_message(
-                "✅ Welcome to Sweet Holes VIP! Your application has been processed!",
-                ephemeral=True)
+                
+                await interaction.response.send_message(
+                    "✅ Welcome to Sweet Holes VIP! Your application has been processed and role assigned! 🎉",
+                    ephemeral=True)
+            else:
+                await interaction.response.send_message(
+                    "❌ There was an issue assigning the VIP role. Please contact an admin.",
+                    ephemeral=True)
 
         except Exception as e:
             print(f"VIP application error: {str(e)}")
             await interaction.response.send_message(
-                "❌ There was an error processing your application. Please try again or contact an admin.",
-                ephemeral=True)
-
-            # Assign VIP role
-            try:
-                vip_role = interaction.guild.get_role(1337508682417700961)
-                if vip_role:
-                    await interaction.user.add_roles(vip_role)
-                    await interaction.response.send_message(
-                        "✅ Your application has been submitted and you've been granted VIP status! 🎉",
-                        ephemeral=True)
-                else:
-                    await interaction.response.send_message(
-                        "✅ Your application has been submitted, but there was an issue assigning the VIP role.",
-                        ephemeral=True)
-            except Exception as e:
-                print(f"Error assigning VIP role: {str(e)}")
-                await interaction.response.send_message(
-                    "✅ Your application has been submitted!",
-                    ephemeral=True)
-
-            # Add user to rewards table with welcome bonus
-            conn = sqlite3.connect('orders.db')
-            c = conn.cursor()
-
-            # Check if user already exists in rewards
-            c.execute("SELECT user_id FROM rewards WHERE user_id = ?",
-                      (interaction.user.id, ))
-            existing_user = c.fetchone()
-
-            if not existing_user:
-                # Add new user with welcome bonus
-                c.execute(
-                    "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
-                    (interaction.user.id, 50, "Flirty Bronze",
-                     interaction.user.display_name))
-                conn.commit()
-                
-            conn.close()
-        except Exception as e:
-            print(f"Application Error: {str(e)}")
-            await interaction.response.send_message(
-                "❌ Something went wrong with your application. Please try again!",
+                "❌ Something went wrong with your application. Please try again or contact an admin.",
                 ephemeral=True)
 
 
