@@ -18,6 +18,14 @@ def setup_database():
     try:
         c.execute('BEGIN TRANSACTION')
 
+        # Create rewards table first
+        c.execute('''CREATE TABLE IF NOT EXISTS rewards
+                     (user_id INTEGER PRIMARY KEY,
+                      points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze',
+                      last_daily TIMESTAMP,
+                      username TEXT)''')
+
         # Create git push tracking table
         c.execute('''CREATE TABLE IF NOT EXISTS git_pushes
                      (push_id INTEGER PRIMARY KEY AUTOINCREMENT,
