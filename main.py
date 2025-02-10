@@ -2242,15 +2242,19 @@ async def on_ready():
             embed = discord.Embed(
                 title="💎 SWEET HOLES VIP MEMBERSHIP 💎",
                 description=
-                "Join our exclusive VIP program and unlock special perks!\nApply now by clicking below.",
+                "Click below to instantly become a VIP member!",
                 color=discord.Color.gold())
             view = discord.ui.View()
 
             async def apply_callback(interaction: discord.Interaction):
-                modal = ApplicationModal(response_channel)
-                await interaction.response.send_modal(modal)
+                vip_role = interaction.guild.get_role(1337508682417700961)
+                if vip_role:
+                    await interaction.user.add_roles(vip_role)
+                    await interaction.response.send_message("✅ Welcome to Sweet Holes VIP! Your role has been assigned! 🎉", ephemeral=True)
+                else:
+                    await interaction.response.send_message("❌ There was an issue assigning the VIP role. Please contact an admin.", ephemeral=True)
 
-            apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH",
+            apply_button = discord.ui.Button(label="🌟 Join VIP",
                                              style=discord.ButtonStyle.danger)
             apply_button.callback = apply_callback
             view.add_item(apply_button)
