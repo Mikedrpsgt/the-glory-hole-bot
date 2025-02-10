@@ -1878,8 +1878,7 @@ async def on_ready():
             'redeem': bot.get_channel(1337508683684384847),
             'vendor': bot.get_channel(1337705856061407283),
             'complaints': bot.get_channel(1337644894558097408),
-            'suggestions': bot.get_channel(1337508683286052895),
-            'points_management': bot.get_channel(1337710851108638750)
+            'suggestions': bot.get_channel(1337508683286052895)
         }
 
         # Setup database
@@ -2083,55 +2082,7 @@ async def on_ready():
                         view = discord.ui.View(
                             timeout=None)  # Make the view persistent
 
-                elif channel_name == 'points_management':
-                    points_management_channel = channels['points_management']
-                    if points_management_channel:
-                        pass  # Keep existing messages
-                        embed = discord.Embed(
-                            title="🎮 Points Management",
-                            description="Add or remove points from users",
-                            color=discord.Color.blue())
-
-                        class PointsManagementView(discord.ui.View):
-
-                            def __init__(self):
-                                super().__init__(timeout=None)
-
-                            @discord.ui.button(
-                                label="➕ Add Points",
-                                style=discord.ButtonStyle.success)
-                            async def add_points_button(
-                                    self, interaction: discord.Interaction,
-                                    button: discord.ui.Button):
-                                if not discord.utils.get(
-                                        interaction.user.roles,
-                                        name=ADMIN_ROLE_NAME):
-                                    await interaction.response.send_message(
-                                        "❌ You don't have permission to do this!",
-                                        ephemeral=True)
-                                    return
-                                modal = GivePointsModal()
-                                await interaction.response.send_modal(modal)
-
-                            @discord.ui.button(
-                                label="➖ Remove Points",
-                                style=discord.ButtonStyle.danger)
-                            async def remove_points_button(
-                                    self, interaction: discord.Interaction,
-                                    button: discord.ui.Button):
-                                if not discord.utils.get(
-                                        interaction.user.roles,
-                                        name=ADMIN_ROLE_NAME):
-                                    await interaction.response.send_message(
-                                        "❌ You don't have permission to do this!",
-                                        ephemeral=True)
-                                    return
-                                modal = RemovePointsModal()
-                                await interaction.response.send_modal(modal)
-
-                        view = PointsManagementView()
-                        await points_management_channel.send(embed=embed,
-                                                             view=view)
+                
 
                 elif channel_name == 'complaints':
                     # Messages are preserved
