@@ -1975,9 +1975,6 @@ async def on_ready():
                                     return
                                 modal = GivePointsModal()
                                 await interaction.response.send_modal(modal)
-                                    
-                                    # Extract member and points from modal response
-                                    input_value = modal.username.value.lower().strip()
                                     member = None
                                     points = int(modal.points.value)
                                     
