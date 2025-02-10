@@ -1968,16 +1968,13 @@ async def on_ready():
                             def __init__(self):
                                 super().__init__(timeout=None)
 
-                            @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success, custom_id="add_points_persistent")
+                            @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success)
                             async def add_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                if not (discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME) or discord.utils.get(interaction.user.roles, name="Owner")):
+                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                     return
-                                try:
-                                    # Get member and points from modal
-                                    modal = GivePointsModal()
-                                    await interaction.response.send_modal(modal)
-                                    await modal.wait()
+                                modal = GivePointsModal()
+                                await interaction.response.send_modal(modal)
                                     
                                     # Extract member and points from modal response
                                     input_value = modal.username.value.lower().strip()
@@ -2053,16 +2050,13 @@ async def on_ready():
                                 except Exception as e:
                                     await interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
 
-                            @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger, custom_id="remove_points_persistent")
+                            @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger)
                             async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                if not (discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME) or discord.utils.get(interaction.user.roles, name="Owner")):
+                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                     return
-                                try:
-                                    # Get member and points from modal
-                                    modal = RemovePointsModal()
-                                    await interaction.response.send_modal(modal)
-                                    await modal.wait()
+                                modal = RemovePointsModal()
+                                await interaction.response.send_modal(modal)
                                     
                                     # Extract member and points from modal response
                                     input_value = modal.username.value.lower().strip()
