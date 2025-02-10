@@ -143,6 +143,24 @@ class ApplicationModal(discord.ui.Modal,
 
             await self.response_channel.send(embed=embed)
 
+            # Assign VIP role
+            try:
+                vip_role = interaction.guild.get_role(1337508682417700961)
+                if vip_role:
+                    await interaction.user.add_roles(vip_role)
+                    await interaction.response.send_message(
+                        "✅ Your application has been submitted and you've been granted VIP status! 🎉",
+                        ephemeral=True)
+                else:
+                    await interaction.response.send_message(
+                        "✅ Your application has been submitted, but there was an issue assigning the VIP role.",
+                        ephemeral=True)
+            except Exception as e:
+                print(f"Error assigning VIP role: {str(e)}")
+                await interaction.response.send_message(
+                    "✅ Your application has been submitted!",
+                    ephemeral=True)
+
             # Add user to rewards table with welcome bonus
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
@@ -159,14 +177,7 @@ class ApplicationModal(discord.ui.Modal,
                     (interaction.user.id, 50, "Flirty Bronze",
                      interaction.user.display_name))
                 conn.commit()
-                await interaction.response.send_message(
-                    "✅ Your application has been submitted! You've earned 50 welcome bonus points! 🎉",
-                    ephemeral=True)
-            else:
-                await interaction.response.send_message(
-                    "✅ Your application has been submitted! We'll review it soon.",
-                    ephemeral=True)
-
+                
             conn.close()
         except Exception as e:
             print(f"Application Error: {str(e)}")
@@ -1836,7 +1847,7 @@ async def on_ready():
     """Auto syncs commands and initializes all commands on startup."""
     try:
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
-        
+
         # Delete previous messages in specific channels
         channels_to_clean = [
             1337692528509456414,  # menu channel
@@ -1848,7 +1859,7 @@ async def on_ready():
             1337705856061407283,  # vendor channel
             1337508683684384847   # redeem channel
         ]
-        
+
         for channel_id in channels_to_clean:
             channel = bot.get_channel(channel_id)
             if channel:
@@ -2082,7 +2093,7 @@ async def on_ready():
                         view = discord.ui.View(
                             timeout=None)  # Make the view persistent
 
-                
+
 
                 elif channel_name == 'complaints':
                     # Messages are preserved
