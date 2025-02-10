@@ -125,7 +125,7 @@ class ApplicationModal(discord.ui.Modal,
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            # Add user to rewards program
+            # Add user to rewards program first
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute(
@@ -135,23 +135,37 @@ class ApplicationModal(discord.ui.Modal,
             conn.close()
 
             # Assign VIP role
-            vip_role = interaction.guild.get_role(1337508682417700961)
-            if vip_role:
-                await interaction.user.add_roles(vip_role)
-            
-            # Send notification to VIP channel
-            vip_channel = interaction.client.get_channel(1337646191994867772)
-            if vip_channel:
-                welcome_embed = discord.Embed(
-                    title="🎉 New VIP Member!",
-                    description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
-                    color=discord.Color.gold())
-                welcome_embed.add_field(name="Introduction", value=self.why_join.value)
-                await vip_channel.send(embed=welcome_embed)
+            try:
+                vip_role = interaction.guild.get_role(1337508682417700961)
+                if vip_role:
+                    await interaction.user.add_roles(vip_role)
+                else:
+                    print("VIP role not found!")
+            except Exception as e:
+                print(f"Error assigning VIP role: {str(e)}")
 
-            # Confirm to user
+            # Send notification to VIP channel
+            try:
+                vip_channel = interaction.client.get_channel(1337646191994867772)
+                if vip_channel:
+                    welcome_embed = discord.Embed(
+                        title="🎉 New VIP Member!",
+                        description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
+                        color=discord.Color.gold())
+                    welcome_embed.add_field(name="Introduction", value=self.why_join.value)
+                    await vip_channel.send(embed=welcome_embed)
+            except Exception as e:
+                print(f"Error sending welcome message: {str(e)}")
+
+            # Respond to user
             await interaction.response.send_message(
-                "✅ Welcome to Sweet Holes VIP! Your role has been assigned and you've been added to our rewards program!",
+                "✅ Welcome to Sweet Holes VIP! Your application has been processed!",
+                ephemeral=True)
+
+        except Exception as e:
+            print(f"VIP application error: {str(e)}")
+            await interaction.response.send_message(
+                "❌ There was an error processing your application. Please try again or contact an admin.",
                 ephemeral=True)
 
             # Assign VIP role
