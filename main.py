@@ -1025,62 +1025,44 @@ async def vip_apply(interaction: discord.Interaction):
     """Shows the VIP application button interface."""
     try:
         # Check if command is used in correct channel
-        if interaction.channel.id != 1337508682950377480:  # VIP Membership channel
+        if interaction.channel_id != 1337508682950377480:  # VIP Membership channel
             await interaction.response.send_message(
                 "❌ This command can only be used in the VIP membership channel!",
                 ephemeral=True)
             return
 
-        response_channel = bot.get_channel(
-            1337646191994867772)  # Applications response channel
-        if not response_channel:
-            print(
-                f"Error: Could not access response channel ID: 1337646191994867772"
-            )
-            await interaction.response.send_message(
-                "Error: Could not access response channel! Please contact an admin.",
-                ephemeral=True)
+        # Add user to rewards program
+        conn = sqlite3.connect('orders.db')
+        c = conn.cursor()
+
+        # Add to rewards if not exists
+        c.execute("INSERT OR IGNORE INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
+                 (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
+        conn.commit()
+        conn.close()
+
+        # Assign VIP role
+        vip_role = interaction.guild.get_role(1337508682417700961)
+        if vip_role:
+            await interaction.user.add_roles(vip_role)
+
+            # Send notification to VIP channel
+            vip_channel = interaction.client.get_channel(1337646191994867772)
+            if vip_channel:
+                welcome_embed = discord.Embed(
+                    title="🎉 New VIP Member!",
+                    description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
+                    color=discord.Color.gold())
+                await vip_channel.send(embed=welcome_embed)
+
+            await interaction.response.send_message("✅ Welcome to Sweet Holes VIP! Your role has been assigned! 🎉", ephemeral=True)
             return
-
-        # Check bot permissions
-        bot_member = interaction.guild.me
-        required_permissions = ['send_messages', 'embed_links', 'attach_files']
-        missing_permissions = [
-            perm for perm in required_permissions if not getattr(
-                response_channel.permissions_for(bot_member), perm, False)
-        ]
-
-        if missing_permissions:
-            await interaction.response.send_message(
-                f"Error: Bot missing permissions in response channel: {', '.join(missing_permissions)}! Please contact an admin.",
-                ephemeral=True)
-            return
-
-        embed = discord.Embed(
-            title="🔥 BECOME A SWEET HOLES GIGACHAD 🔥",
-            description=
-            "Only the most based individuals may enter.\nProve your worth by clicking below.",
-            color=discord.Color.purple())
-        view = discord.ui.View()
-
-        async def apply_callback(button_interaction: discord.Interaction):
-            modal = ApplicationModal(response_channel)
-            await button_interaction.response.send_modal(modal)
-
-        apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH",
-                                         style=discord.ButtonStyle.danger)
-        apply_button.callback = apply_callback
-        view.add_item(apply_button)
-
-        await interaction.response.send_message(embed=embed,
-                                                view=view,
-                                                ephemeral=True)
-
+        else:
+            await interaction.response.send_message("❌ There was an issue assigning the VIP role. Please contact an admin.", ephemeral=True)
 
     except Exception as e:
-        await interaction.response.send_message(
-            f"❌ An error occurred: {str(e)}", ephemeral=True)
-        return
+        print(f"VIP application error: {str(e)}")
+        await interaction.response.send_message("❌ Something went wrong with your application. Please try again or contact an admin.", ephemeral=True)
 
 
 @bot.tree.command(name="signup_rewards",
@@ -2410,7 +2392,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keepalive import keep_alive
+from keep_alive import keep_alive
 
 keep_alive()  # This starts the Flask server in a separate thread
 
