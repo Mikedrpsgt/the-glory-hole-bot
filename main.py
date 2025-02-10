@@ -2248,43 +2248,34 @@ async def on_ready():
 
             async def apply_callback(interaction: discord.Interaction):
                 try:
+                    await interaction.response.defer(ephemeral=True)
+                    
                     # Get the VIP role
                     vip_role = interaction.guild.get_role(1337508682417700961)
-                    if not vip_role:
-                        print(f"Error: VIP role not found. Role ID: 1337508682417700961")
-                        await interaction.response.send_message("❌ VIP role not found. Please contact an admin.", ephemeral=True)
-                        return
-
-                    # Check if user already has the role
-                    if vip_role in interaction.user.roles:
-                        await interaction.response.send_message("You are already a VIP member! 💖", ephemeral=True)
-                        return
-
-                    # Add the role
-                    await interaction.user.add_roles(vip_role, reason="VIP Membership Button")
                     
-                    # Verify role was added
-                    await interaction.user.fetch()  # Refresh user data
-                    if vip_role in interaction.user.roles:
-                        await interaction.response.send_message("✅ Welcome to Sweet Holes VIP! Your role has been assigned! 🎉", ephemeral=True)
-                        
-                        # Send notification to VIP channel
-                        vip_channel = interaction.client.get_channel(1337646191994867772)
-                        if vip_channel:
-                            welcome_embed = discord.Embed(
-                                title="🎉 New VIP Member!",
-                                description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
-                                color=discord.Color.gold())
-                            await vip_channel.send(embed=welcome_embed)
-                    else:
-                        await interaction.response.send_message("❌ Failed to assign VIP role. Please contact an admin.", ephemeral=True)
+                    if not vip_role:
+                        await interaction.followup.send("❌ VIP role not found. Please contact an admin.", ephemeral=True)
+                        return
 
-                except discord.Forbidden:
-                    print("Error: Bot lacks permission to assign roles")
-                    await interaction.response.send_message("❌ I don't have permission to assign roles. Please contact an admin.", ephemeral=True)
+                    if vip_role in interaction.user.roles:
+                        await interaction.followup.send("You are already a VIP member! 💖", ephemeral=True)
+                        return
+
+                    await interaction.user.add_roles(vip_role)
+                    await interaction.followup.send("✅ Welcome to Sweet Holes VIP! Your role has been assigned! 🎉", ephemeral=True)
+                    
+                    # Send notification to VIP channel
+                    vip_channel = interaction.client.get_channel(1337646191994867772)
+                    if vip_channel:
+                        welcome_embed = discord.Embed(
+                            title="🎉 New VIP Member!",
+                            description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
+                            color=discord.Color.gold())
+                        await vip_channel.send(embed=welcome_embed)
+
                 except Exception as e:
-                    print(f"Error assigning VIP role: {str(e)}")
-                    await interaction.response.send_message("❌ An error occurred while assigning the role. Please contact an admin.", ephemeral=True)
+                    print(f"VIP role error: {str(e)}")
+                    await interaction.followup.send("❌ Failed to assign VIP role. Please try again.", ephemeral=True)
 
             apply_button = discord.ui.Button(label="🌟 Join VIP",
                                              style=discord.ButtonStyle.danger)
