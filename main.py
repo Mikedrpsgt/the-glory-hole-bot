@@ -806,7 +806,8 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
                 # Verify points were added
                 c.execute("SELECT points FROM rewards WHERE user_id = ?",
-                          (member.id, ))                new_points = c.fetchone()[0]
+                          (member.id, ))
+                new_points = c.fetchone()[0]
 
                 await interaction.response.send_message(
                     f"✅ Added {points} points to {member.display_name}\nNew total: {new_points} points",
