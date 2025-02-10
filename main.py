@@ -1635,23 +1635,39 @@ async def add_points(interaction: discord.Interaction, member: discord.Member, p
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
         
-        # Add points and update username
-        c.execute(
-            "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
-            (member.id, points, member.display_name, points, member.display_name)
-        )
-        
-        # Get new total
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
-        new_total = c.fetchone()[0]
-        
-        conn.commit()
-        conn.close()
-        
-        await interaction.response.send_message(
-            f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
-            ephemeral=True
-        )
+        try:
+            # First check if user exists
+            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            result = c.fetchone()
+            
+            if result:
+                # Update existing user
+                c.execute(
+                    "UPDATE rewards SET points = points + ?, username = ? WHERE user_id = ?",
+                    (points, member.display_name, member.id)
+                )
+            else:
+                # Insert new user
+                c.execute(
+                    "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?)",
+                    (member.id, points, member.display_name)
+                )
+            
+            conn.commit()
+            
+            # Get new total
+            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            new_total = c.fetchone()[0]
+            
+            await interaction.response.send_message(
+                f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
+                ephemeral=True
+            )
+        except sqlite3.Error as e:
+            await interaction.response.send_message(f"❌ Database error: {str(e)}", ephemeral=True)
+        finally:
+            conn.close()
+            
     except Exception as e:
         await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
 
