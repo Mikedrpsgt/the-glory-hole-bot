@@ -1836,6 +1836,28 @@ async def on_ready():
     """Auto syncs commands and initializes all commands on startup."""
     try:
         print("🔥 Sweet Holes VIP & Flirty Fun Bot is LIVE! 😏")
+        
+        # Delete previous messages in specific channels
+        channels_to_clean = [
+            1337692528509456414,  # menu channel
+            1337508683286052899,  # order channel
+            1337508683684384846,  # tier channel
+            1337508682950377480,  # membership channel
+            1337644894558097408,  # complaints channel
+            1337508683286052895,  # suggestions channel
+            1337705856061407283,  # vendor channel
+            1337508683684384847   # redeem channel
+        ]
+        
+        for channel_id in channels_to_clean:
+            channel = bot.get_channel(channel_id)
+            if channel:
+                try:
+                    async for message in channel.history(limit=100):
+                        if message.author == bot.user:
+                            await message.delete()
+                except Exception as e:
+                    print(f"Error cleaning channel {channel_id}: {str(e)}")
 
         # Sync commands
         await bot.tree.sync()
