@@ -1799,6 +1799,18 @@ async def git_pull(interaction: discord.Interaction):
             f"❌ Error executing git pull: {str(e)}", ephemeral=True)
 
 
+@bot.event 
+async def on_interaction_error(interaction: discord.Interaction, error: Exception):
+    if isinstance(error, discord.InteractionResponded):
+        return  # Interaction was already responded to
+    elif isinstance(error, discord.NotFound):
+        try:
+            await interaction.response.send_message("This interaction has expired. Please try again.", ephemeral=True)
+        except:
+            pass  # If we can't respond, ignore it
+    else:
+        print(f"Interaction error: {str(error)}")
+
 @bot.event
 async def on_ready():
     """Auto syncs commands and initializes all commands on startup."""
