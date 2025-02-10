@@ -113,16 +113,6 @@ class ApplicationModal(discord.ui.Modal,
         super().__init__()
         self.response_channel = response_channel
 
-    name = discord.ui.TextInput(label="Your Name",
-                                placeholder="Enter your name",
-                                required=True)
-
-    why_join = discord.ui.TextInput(
-        label="Why do you want to join?",
-        style=discord.TextStyle.long,
-        placeholder="Tell us why you'd like to join Sweet Holes VIP...",
-        required=True)
-
     async def on_submit(self, interaction: discord.Interaction):
         try:
             # Add user to rewards program first
@@ -152,7 +142,6 @@ class ApplicationModal(discord.ui.Modal,
                         title="🎉 New VIP Member!",
                         description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
                         color=discord.Color.gold())
-                    welcome_embed.add_field(name="Introduction", value=self.why_join.value)
                     await vip_channel.send(embed=welcome_embed)
             except Exception as e:
                 print(f"Error sending welcome message: {str(e)}")
