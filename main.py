@@ -118,7 +118,7 @@ class ApplicationModal(discord.ui.Modal,
             # Add user to rewards program first
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             # Check if user already exists in rewards
             c.execute("SELECT user_id FROM rewards WHERE user_id = ?", (interaction.user.id,))
             existing_user = c.fetchone()
@@ -128,14 +128,14 @@ class ApplicationModal(discord.ui.Modal,
                     "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
                     (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
                 conn.commit()
-            
+
             conn.close()
 
             # Assign VIP role
             vip_role = interaction.guild.get_role(1337508682417700961)
             if vip_role:
                 await interaction.user.add_roles(vip_role)
-                
+
                 # Send notification to VIP channel
                 vip_channel = interaction.client.get_channel(1337646191994867772)
                 if vip_channel:
@@ -144,7 +144,7 @@ class ApplicationModal(discord.ui.Modal,
                         description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
                         color=discord.Color.gold())
                     await vip_channel.send(embed=welcome_embed)
-                
+
                 await interaction.response.send_message(
                     "✅ Welcome to Sweet Holes VIP! Your application has been processed and role assigned! 🎉",
                     ephemeral=True)
@@ -804,8 +804,7 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             finally:
                 conn.close()
 
-        except Exception as e:
-            await interaction.response.send_message(
+        except Exception as e:            await interaction.response.send_message(
                 f"❌ An error occurred: {str(e)}\nTry using the member's ID instead.",
                 ephemeral=True)
 
@@ -1067,19 +1066,21 @@ async def vip_apply(interaction: discord.Interaction):
         async def apply_callback(button_interaction: discord.Interaction):
             modal = ApplicationModal(response_channel)
             await button_interaction.response.send_modal(modal)
+
+        apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH",
+                                         style=discord.ButtonStyle.danger)
+        apply_button.callback = apply_callback
+        view.add_item(apply_button)
+
+        await interaction.response.send_message(embed=embed,
+                                                view=view,
+                                                ephemeral=True)
+
+
     except Exception as e:
         await interaction.response.send_message(
             f"❌ An error occurred: {str(e)}", ephemeral=True)
         return
-
-    apply_button = discord.ui.Button(label="😈 PROVE YOUR WORTH",
-                                     style=discord.ButtonStyle.danger)
-    apply_button.callback = apply_callback
-    view.add_item(apply_button)
-
-    await interaction.response.send_message(embed=embed,
-                                            view=view,
-                                            ephemeral=True)
 
 
 @bot.tree.command(name="signup_rewards",
@@ -1978,7 +1979,7 @@ async def on_ready():
                         style=discord.ButtonStyle.danger)
 
                     async def vip_callback(interaction: discord.Interaction):
-                        if interaction.channel.id != 1337508682950377480:
+                        if interaction.channel_id != 1337508682950377480:
                             await interaction.response.send_message(
                                 "❌ Wrong channel!", ephemeral=True)
                             return
@@ -2001,7 +2002,7 @@ async def on_ready():
                         label="📝 Apply Now", style=discord.ButtonStyle.primary)
 
                     async def job_callback(interaction: discord.Interaction):
-                        if interaction.channel.id != 1337508683286052894:
+                        if interaction.channel_id != 1337508683286052894:
                             await interaction.response.send_message(
                                 "❌ Wrong channel!", ephemeral=True)
                             return
@@ -2427,7 +2428,7 @@ if not TOKEN:
 if not TOKEN.strip().startswith(('M', 'N', 'O')):
     print(
         "❌ Error: Invalid Discord bot token format. Please check your token in the Secrets tab."
-)
+    )
     exit(1)
 
 try:
