@@ -2115,7 +2115,7 @@ async def on_ready():
                                                              view=view)
 
                 elif channel_name == 'complaints':
-                    await channel.purge(limit=100)  # Clear existing messages
+                    # Messages are preserved
                     embed = discord.Embed(
                         title="📝 File a Complaint",
                         description="Having an issue? Let us know below.",
@@ -2300,15 +2300,7 @@ async def on_ready():
             view.add_item(apply_button)
             await membership_channel.send(embed=embed, view=view)
 
-        # Clear messages only in specific channels, preserving membership and vendor history
-        channels_to_purge = {
-            menu_channel, order_channel, tier_channel, complaints_channel,
-            suggestion_channel, redeem_channel
-        }
-
-        for channel in channels_to_purge:
-            if channel and channel.id != 1337508682950377480:  # Skip membership channel
-                await channel.purge(limit=100)
+        # Channels are no longer purged to preserve message history
 
         if menu_channel:
             embed = discord.Embed(
