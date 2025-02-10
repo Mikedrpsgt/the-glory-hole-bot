@@ -1955,16 +1955,182 @@ async def on_ready():
                                 if not (discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME) or discord.utils.get(interaction.user.roles, name="Owner")):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                     return
-                                modal = GivePointsModal()
-                                await interaction.response.send_modal(modal)
+                                try:
+                                    # Get member and points from modal
+                                    modal = GivePointsModal()
+                                    await interaction.response.send_modal(modal)
+                                    await modal.wait()
+                                    
+                                    # Extract member and points from modal response
+                                    input_value = modal.username.value.lower().strip()
+                                    member = None
+                                    points = int(modal.points.value)
+                                    
+                                    if points <= 0:
+                                        await interaction.followup.send("❌ Points must be positive!", ephemeral=True)
+                                        return
+                                        
+                                    # Try to find member by ID first
+                                    if input_value.isdigit():
+                                        member = interaction.guild.get_member(int(input_value))
+                                    
+                                    # Try to find by name if ID didn't work
+                                    if not member:
+                                        for m in interaction.guild.members:
+                                            if (input_value == m.name.lower() or 
+                                                input_value == m.display_name.lower() or 
+                                                (m.nick and input_value == m.nick.lower())):
+                                                member = m
+                                                break
+                                    
+                                    if not member:
+                                        matches = []
+                                        for m in interaction.guild.members:
+                                            if (input_value in m.name.lower() or 
+                                                input_value in m.display_name.lower() or 
+                                                (m.nick and input_value in m.nick.lower())):
+                                                matches.append(m)
+                                        
+                                        if len(matches) == 1:
+                                            member = matches[0]
+                                        elif len(matches) > 1:
+                                            names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
+                                            await interaction.followup.send(
+                                                f"❌ Multiple matches found! Please use their ID:\n{names_list}",
+                                                ephemeral=True
+                                            )
+                                            return
+                                    
+                                    if not member:
+                                        active_members = [m for m in interaction.guild.members if not m.bot][:10]
+                                        names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
+                                        await interaction.followup.send(
+                                            f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
+                                            ephemeral=True
+                                        )
+                                        return
+                                    
+                                    conn = sqlite3.connect('orders.db')
+                                    c = conn.cursor()
+                                    
+                                    # Add points and update username
+                                    c.execute(
+                                        "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
+                                        (member.id, points, member.display_name, points, member.display_name)
+                                    )
+                                    
+                                    # Get new total
+                                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+                                    new_total = c.fetchone()[0]
+                                    
+                                    conn.commit()
+                                    conn.close()
+                                    
+                                    await interaction.followup.send(
+                                        f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
+                                        ephemeral=True
+                                    )
+                                except ValueError:
+                                    await interaction.followup.send("❌ Please enter a valid number for points!", ephemeral=True)
+                                except Exception as e:
+                                    await interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
 
                             @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger, custom_id="remove_points_persistent")
                             async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                                 if not (discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME) or discord.utils.get(interaction.user.roles, name="Owner")):
                                     await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
                                     return
-                                modal = RemovePointsModal()
-                                await interaction.response.send_modal(modal)
+                                try:
+                                    # Get member and points from modal
+                                    modal = RemovePointsModal()
+                                    await interaction.response.send_modal(modal)
+                                    await modal.wait()
+                                    
+                                    # Extract member and points from modal response
+                                    input_value = modal.username.value.lower().strip()
+                                    member = None
+                                    points = int(modal.points.value)
+                                    
+                                    if points <= 0:
+                                        await interaction.followup.send("❌ Points must be positive!", ephemeral=True)
+                                        return
+                                        
+                                    # Try to find member by ID first
+                                    if input_value.isdigit():
+                                        member = interaction.guild.get_member(int(input_value))
+                                    
+                                    # Try to find by name if ID didn't work
+                                    if not member:
+                                        for m in interaction.guild.members:
+                                            if (input_value == m.name.lower() or 
+                                                input_value == m.display_name.lower() or 
+                                                (m.nick and input_value == m.nick.lower())):
+                                                member = m
+                                                break
+                                    
+                                    if not member:
+                                        matches = []
+                                        for m in interaction.guild.members:
+                                            if (input_value in m.name.lower() or 
+                                                input_value in m.display_name.lower() or 
+                                                (m.nick and input_value in m.nick.lower())):
+                                                matches.append(m)
+                                        
+                                        if len(matches) == 1:
+                                            member = matches[0]
+                                        elif len(matches) > 1:
+                                            names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
+                                            await interaction.followup.send(
+                                                f"❌ Multiple matches found! Please use their ID:\n{names_list}",
+                                                ephemeral=True
+                                            )
+                                            return
+                                    
+                                    if not member:
+                                        active_members = [m for m in interaction.guild.members if not m.bot][:10]
+                                        names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
+                                        await interaction.followup.send(
+                                            f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
+                                            ephemeral=True
+                                        )
+                                        return
+                                    
+                                    conn = sqlite3.connect('orders.db')
+                                    c = conn.cursor()
+                                    
+                                    # Check current points
+                                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+                                    result = c.fetchone()
+                                    
+                                    if not result or result[0] < points:
+                                        await interaction.followup.send(
+                                            f"❌ {member.display_name} doesn't have enough points to remove!",
+                                            ephemeral=True
+                                        )
+                                        conn.close()
+                                        return
+                                    
+                                    # Remove points and update username
+                                    c.execute(
+                                        "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
+                                        (points, member.display_name, member.id)
+                                    )
+                                    
+                                    # Get new total
+                                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+                                    new_total = c.fetchone()[0]
+                                    
+                                    conn.commit()
+                                    conn.close()
+                                    
+                                    await interaction.followup.send(
+                                        f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
+                                        ephemeral=True
+                                    )
+                                except ValueError:
+                                    await interaction.followup.send("❌ Please enter a valid number for points!", ephemeral=True)
+                                except Exception as e:
+                                    await interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
 
                         view = PointsManagementView()
                         await points_management_channel.send(embed=embed, view=view)
