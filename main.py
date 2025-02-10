@@ -9,7 +9,6 @@ import random
 from datetime import datetime, timedelta
 
 
-
 # Database Setup & Auto Creation
 def setup_database():
     conn = sqlite3.connect('orders.db')
@@ -52,15 +51,18 @@ def setup_database():
 
         c.execute('''CREATE TABLE IF NOT EXISTS complaints
                      (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                  )
 
         c.execute('''CREATE TABLE IF NOT EXISTS suggestions
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                  )
 
         c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
                      (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)''')
+                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)'''
+                  )
 
         c.execute('COMMIT')
     except Exception as e:
@@ -83,6 +85,7 @@ ADMIN_ROLE_NAME = "Sweet Holes Admin"
 
 
 def is_admin():
+
     async def predicate(ctx):
         return discord.utils.get(ctx.author.roles, name=ADMIN_ROLE_NAME) is not None or \
                discord.utils.get(ctx.author.roles, name="Owner") is not None
@@ -113,14 +116,10 @@ class ApplicationModal(discord.ui.Modal,
                                 placeholder="Enter your name",
                                 required=True)
 
-    age = discord.ui.TextInput(label="Your Age",
-                               placeholder="Enter your age",
-                               required=True)
-
     why_join = discord.ui.TextInput(
         label="Why do you want to join?",
         style=discord.TextStyle.long,
-        placeholder="Tell us why you'd like to join Sweet Holes team...",
+        placeholder="Tell us why you'd like to join Sweet Holes VIP...",
         required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -131,13 +130,12 @@ class ApplicationModal(discord.ui.Modal,
                     ephemeral=True)
                 return
 
-            embed = discord.Embed(title="✨ New Employee Application",
+            embed = discord.Embed(title="✨ New VIP Application",
                                   color=discord.Color.gold())
             embed.add_field(name="Applicant",
                             value=f"<@{interaction.user.id}>",
                             inline=False)
             embed.add_field(name="Name", value=self.name.value, inline=True)
-            embed.add_field(name="Age", value=self.age.value, inline=True)
             embed.add_field(name="Why Join",
                             value=self.why_join.value,
                             inline=False)
@@ -149,14 +147,16 @@ class ApplicationModal(discord.ui.Modal,
             c = conn.cursor()
 
             # Check if user already exists in rewards
-            c.execute("SELECT user_id FROM rewards WHERE user_id = ?", (interaction.user.id,))
+            c.execute("SELECT user_id FROM rewards WHERE user_id = ?",
+                      (interaction.user.id, ))
             existing_user = c.fetchone()
 
             if not existing_user:
                 # Add new user with welcome bonus
                 c.execute(
                     "INSERT INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
-                    (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
+                    (interaction.user.id, 50, "Flirty Bronze",
+                     interaction.user.display_name))
                 conn.commit()
                 await interaction.response.send_message(
                     "✅ Your application has been submitted! You've earned 50 welcome bonus points! 🎉",
@@ -254,11 +254,13 @@ class OrderView(View):
                                                         ephemeral=True)
 
                 # Send notification to staff channel
-                staff_channel = interaction.client.get_channel(1337712800453230643)
+                staff_channel = interaction.client.get_channel(
+                    1337712800453230643)
                 if staff_channel:
                     staff_embed = discord.Embed(
                         title="🔔 New Order!",
-                        description=f"**Order ID:** `{order_id}`\n**Customer:** {interaction.user.mention}\n🍩 **Order:** {order_text}",
+                        description=
+                        f"**Order ID:** `{order_id}`\n**Customer:** {interaction.user.mention}\n🍩 **Order:** {order_text}",
                         color=discord.Color.green())
                     await staff_channel.send(embed=staff_embed)
             except Exception as e:
@@ -378,24 +380,35 @@ async def update_loyalty():
     """Upgrades users based on points."""
     conn = sqlite3.connect('orders.db')
 
+
 class SuggestionView(discord.ui.View):
+
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
 
-    @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
-    async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="💡 Make Suggestion",
+                       style=discord.ButtonStyle.success,
+                       custom_id="suggestion_button")
+    async def suggest_button(self, interaction: discord.Interaction,
+                             button: discord.ui.Button):
         if interaction.channel_id != 1337508683286052895:
-            await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ Please use this in the suggestions channel!",
+                ephemeral=True)
             return
         modal = SuggestionModal()
         await interaction.response.send_modal(modal)
 
+
 class ComplaintView(View):
+
     def __init__(self):
         super().__init__(timeout=None)  # Make the view persistent
 
-    @discord.ui.button(label="📝 File Complaint", style=discord.ButtonStyle.danger)
-    async def file_complaint(self, interaction: discord.Interaction, button: Button):
+    @discord.ui.button(label="📝 File Complaint",
+                       style=discord.ButtonStyle.danger)
+    async def file_complaint(self, interaction: discord.Interaction,
+                             button: Button):
         modal = ComplaintModal()
         await interaction.response.send_modal(modal)
 
@@ -475,7 +488,9 @@ async def daily(interaction: discord.Interaction):
                          last_daily TIMESTAMP, username TEXT)''')
             conn.commit()
 
-            c.execute("SELECT last_daily, points FROM rewards WHERE user_id = ?", (user_id,))
+            c.execute(
+                "SELECT last_daily, points FROM rewards WHERE user_id = ?",
+                (user_id, ))
             result = c.fetchone()
             current_time = datetime.now()
 
@@ -484,25 +499,29 @@ async def daily(interaction: discord.Interaction):
                 bonus_points = random.randint(1, 40)
                 c.execute(
                     "INSERT INTO rewards (user_id, points, last_daily, username) VALUES (?, ?, ?, ?)",
-                    (user_id, bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), interaction.user.name))
+                    (user_id, bonus_points,
+                     current_time.strftime('%Y-%m-%d %H:%M:%S'),
+                     interaction.user.name))
                 conn.commit()
 
                 reward_msg = await interaction.followup.send(
                     "🎲 **Rolling your welcome bonus**... \n╰⊱⭑⭑⭑⊱╮",
-                    ephemeral=True
-                )
+                    ephemeral=True)
                 await asyncio.sleep(1.5)
-                await reward_msg.edit(content=
-                    f"🎉 **WELCOME BONUS!** 🎊\n"
-                    f"You won **+{bonus_points} points!**\n"
-                    f"╰⊱{'⭐' * (bonus_points // 8 + 1)}⊱╮")
+                await reward_msg.edit(content=f"🎉 **WELCOME BONUS!** 🎊\n"
+                                      f"You won **+{bonus_points} points!**\n"
+                                      f"╰⊱{'⭐' * (bonus_points // 8 + 1)}⊱╮")
 
             else:
-                last_claim = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S') if result[0] else datetime.min
+                last_claim = datetime.strptime(
+                    result[0],
+                    '%Y-%m-%d %H:%M:%S') if result[0] else datetime.min
                 current_points = result[1] or 0
 
                 if current_time.date() <= last_claim.date():
-                    time_remaining = datetime.combine(last_claim.date() + timedelta(days=1), datetime.min.time()) - current_time
+                    time_remaining = datetime.combine(
+                        last_claim.date() + timedelta(days=1),
+                        datetime.min.time()) - current_time
                     hours, remainder = divmod(time_remaining.seconds, 3600)
                     minutes, _ = divmod(remainder, 60)
 
@@ -516,23 +535,24 @@ async def daily(interaction: discord.Interaction):
                     # Animated daily reward claim
                     initial_msg = await interaction.followup.send(
                         "🎲 **Rolling your daily reward**...\n╰⊱⭑⭑⭑⊱╮",
-                        ephemeral=True
-                    )
+                        ephemeral=True)
                     await asyncio.sleep(1)
 
                     bonus_points = random.randint(1, 40)
                     c.execute(
                         "UPDATE rewards SET points = points + ?, last_daily = ? WHERE user_id = ?",
-                        (bonus_points, current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
+                        (bonus_points,
+                         current_time.strftime('%Y-%m-%d %H:%M:%S'), user_id))
                     conn.commit()
 
-                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (user_id,))
+                    c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                              (user_id, ))
                     new_total = c.fetchone()[0]
 
                     # Show bonus animation based on points
                     stars = '⭐' * (bonus_points // 8 + 1)
-                    await initial_msg.edit(content=
-                        f"🎉 **DAILY REWARD!** 🎊\n"
+                    await initial_msg.edit(
+                        content=f"🎉 **DAILY REWARD!** 🎊\n"
                         f"You won **+{bonus_points} points!**\n"
                         f"Total balance: **{new_total} points**\n"
                         f"╰⊱{stars}⊱╮")
@@ -543,8 +563,7 @@ async def daily(interaction: discord.Interaction):
     except Exception as e:
         print(f"Daily reward error: {str(e)}")
         await interaction.followup.send(
-            "❌ Something went wrong! Please try again!",
-            ephemeral=True)
+            "❌ Something went wrong! Please try again!", ephemeral=True)
 
 
 # --- Auto Register Commands ---
@@ -636,14 +655,11 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
         label="Discord Name or ID",
         style=discord.TextStyle.short,
         placeholder="Enter their name, nickname, or ID",
-        required=True
-    )
-    points = discord.ui.TextInput(
-        label="Points",
-        style=discord.TextStyle.short,
-        placeholder="Enter points amount",
-        required=True
-    )
+        required=True)
+    points = discord.ui.TextInput(label="Points",
+                                  style=discord.TextStyle.short,
+                                  placeholder="Enter points amount",
+                                  required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
@@ -651,10 +667,12 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             try:
                 points = int(self.points.value)
                 if points <= 0:
-                    await interaction.response.send_message("❌ Points must be a positive number!", ephemeral=True)
+                    await interaction.response.send_message(
+                        "❌ Points must be a positive number!", ephemeral=True)
                     return
             except ValueError:
-                await interaction.response.send_message("❌ Points must be a valid number!", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ Points must be a valid number!", ephemeral=True)
                 return
 
             # Execute add_points command logic
@@ -668,9 +686,9 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             # Try to find by name if ID didn't work
             if not member:
                 for m in interaction.guild.members:
-                    if (input_value == m.name.lower() or 
-                        input_value == m.display_name.lower() or 
-                        (m.nick and input_value == m.nick.lower())):
+                    if (input_value == m.name.lower()
+                            or input_value == m.display_name.lower()
+                            or (m.nick and input_value == m.nick.lower())):
                         member = m
                         break
 
@@ -678,28 +696,30 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             if not member:
                 matches = []
                 for m in interaction.guild.members:
-                    if (input_value in m.name.lower() or 
-                        input_value in m.display_name.lower() or 
-                        (m.nick and input_value in m.nick.lower())):
+                    if (input_value in m.name.lower()
+                            or input_value in m.display_name.lower()
+                            or (m.nick and input_value in m.nick.lower())):
                         matches.append(m)
 
                 if len(matches) == 1:
                     member = matches[0]
                 elif len(matches) > 1:
-                    names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
+                    names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                           for m in matches[:10])
                     await interaction.response.send_message(
                         f"❌ Multiple matches found! Please use their ID:\n{names_list}",
-                        ephemeral=True
-                    )
+                        ephemeral=True)
                     return
 
             if not member:
-                active_members = [m for m in interaction.guild.members if not m.bot][:10]
-                names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
+                active_members = [
+                    m for m in interaction.guild.members if not m.bot
+                ][:10]
+                names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                       for m in active_members)
                 await interaction.response.send_message(
                     f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
-                    ephemeral=True
-                )
+                    ephemeral=True)
                 return
 
             conn = sqlite3.connect('orders.db')
@@ -708,11 +728,12 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             # Add points and update username
             c.execute(
                 "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
-                (member.id, points, member.display_name, points, member.display_name)
-            )
+                (member.id, points, member.display_name, points,
+                 member.display_name))
 
             # Get new total
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                      (member.id, ))
             new_total = c.fetchone()[0]
 
             conn.commit()
@@ -720,8 +741,7 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
             await interaction.response.send_message(
                 f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
-                ephemeral=True
-            )
+                ephemeral=True)
 
             # Find member
             input_value = self.username.value.lower().strip()
@@ -734,9 +754,9 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             # Try to find by name if ID didn't work
             if not member:
                 for m in interaction.guild.members:
-                    if (input_value == m.name.lower() or 
-                        input_value == m.display_name.lower() or 
-                        (m.nick and input_value == m.nick.lower())):
+                    if (input_value == m.name.lower()
+                            or input_value == m.display_name.lower()
+                            or (m.nick and input_value == m.nick.lower())):
                         member = m
                         break
 
@@ -744,30 +764,32 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             if not member:
                 matches = []
                 for m in interaction.guild.members:
-                    if (input_value in m.name.lower() or 
-                        input_value in m.display_name.lower() or 
-                        (m.nick and input_value in m.nick.lower())):
+                    if (input_value in m.name.lower()
+                            or input_value in m.display_name.lower()
+                            or (m.nick and input_value in m.nick.lower())):
                         matches.append(m)
 
                 if len(matches) == 1:
                     member = matches[0]
                 elif len(matches) > 1:
                     # Multiple matches found
-                    names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
+                    names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                           for m in matches[:10])
                     await interaction.response.send_message(
                         f"❌ Multiple matches found! Please use their ID:\n{names_list}",
-                        ephemeral=True
-                    )
+                        ephemeral=True)
                     return
 
             if not member:
                 # No matches found
-                active_members = [m for m in interaction.guild.members if not m.bot][:10]
-                names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
+                active_members = [
+                    m for m in interaction.guild.members if not m.bot
+                ][:10]
+                names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                       for m in active_members)
                 await interaction.response.send_message(
                     f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
-                    ephemeral=True
-                )
+                    ephemeral=True)
                 return
 
             # Add points
@@ -777,36 +799,40 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
             try:
                 c.execute(
                     "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
-                    (member.id, points, member.display_name, points, member.display_name))
+                    (member.id, points, member.display_name, points,
+                     member.display_name))
                 conn.commit()
 
                 # Verify points were added
-                c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+                c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                          (member.id, ))
                 new_points = c.fetchone()[0]
 
                 await interaction.response.send_message(
-                    f"✅ Added {points} points to {member.display_name}\nNew total: {new_points} points", 
+                    f"✅ Added {points} points to {member.display_name}\nNew total: {new_points} points",
                     ephemeral=True)
 
             except sqlite3.Error as e:
-                await interaction.response.send_message(f"❌ Database error: {str(e)}", ephemeral=True)
+                await interaction.response.send_message(
+                    f"❌ Database error: {str(e)}", ephemeral=True)
             finally:
                 conn.close()
 
         except Exception as e:
             await interaction.response.send_message(
-                f"❌ An error occurred: {str(e)}\nTry using the member's ID instead.", 
+                f"❌ An error occurred: {str(e)}\nTry using the member's ID instead.",
                 ephemeral=True)
 
 
 class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
-    username = discord.ui.TextInput(label="Discord Name or ID", 
-                                   style=discord.TextStyle.short, 
-                                   placeholder="Enter their name, nickname, or ID", 
-                                   required=True)
-    points = discord.ui.TextInput(label="Points", 
-                                  style=discord.TextStyle.short, 
-                                  placeholder="Enter points amount", 
+    username = discord.ui.TextInput(
+        label="Discord Name or ID",
+        style=discord.TextStyle.short,
+        placeholder="Enter their name, nickname, or ID",
+        required=True)
+    points = discord.ui.TextInput(label="Points",
+                                  style=discord.TextStyle.short,
+                                  placeholder="Enter points amount",
                                   required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -815,10 +841,12 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
             try:
                 points = int(self.points.value)
                 if points <= 0:
-                    await interaction.response.send_message("❌ Points must be a positive number!", ephemeral=True)
+                    await interaction.response.send_message(
+                        "❌ Points must be a positive number!", ephemeral=True)
                     return
             except ValueError:
-                await interaction.response.send_message("❌ Points must be a valid number!", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ Points must be a valid number!", ephemeral=True)
                 return
 
             input_value = self.username.value.lower().strip()
@@ -831,62 +859,64 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
             # Try to find by name if ID didn't work
             if not member:
                 for m in interaction.guild.members:
-                    if (input_value == m.name.lower() or 
-                        input_value == m.display_name.lower() or 
-                        (m.nick and input_value == m.nick.lower())):
+                    if (input_value == m.name.lower()
+                            or input_value == m.display_name.lower()
+                            or (m.nick and input_value == m.nick.lower())):
                         member = m
                         break
 
             if not member:
                 matches = []
                 for m in interaction.guild.members:
-                    if (input_value in m.name.lower() or 
-                        input_value in m.display_name.lower() or 
-                        (m.nick and input_value in m.nick.lower())):
+                    if (input_value in m.name.lower()
+                            or input_value in m.display_name.lower()
+                            or (m.nick and input_value in m.nick.lower())):
                         matches.append(m)
 
                 if len(matches) == 1:
                     member = matches[0]
                 elif len(matches) > 1:
-                    names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
+                    names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                           for m in matches[:10])
                     await interaction.response.send_message(
                         f"❌ Multiple matches found! Please use their ID:\n{names_list}",
-                        ephemeral=True
-                    )
+                        ephemeral=True)
                     return
 
             if not member:
-                active_members = [m for m in interaction.guild.members if not m.bot][:10]
-                names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
+                active_members = [
+                    m for m in interaction.guild.members if not m.bot
+                ][:10]
+                names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                       for m in active_members)
                 await interaction.response.send_message(
                     f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
-                    ephemeral=True
-                )
+                    ephemeral=True)
                 return
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
 
             # Check current points
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                      (member.id, ))
             result = c.fetchone()
 
             if not result or result[0] < points:
                 await interaction.response.send_message(
                     f"❌ {member.display_name} doesn't have enough points to remove!",
-                    ephemeral=True
-                )
+                    ephemeral=True)
                 conn.close()
                 return
 
             # Remove points and update username
             c.execute(
                 "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
-                (points, member.display_name, member.id)
-            )
+                (points, member.display_name, member.id))
 
             # Get new total
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                      (member.id, ))
             new_total = c.fetchone()[0]
 
             conn.commit()
@@ -894,8 +924,7 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
 
             await interaction.response.send_message(
                 f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
-                ephemeral=True
-            )
+                ephemeral=True)
 
             # Try to find member by ID first
             if input_value.isdigit():
@@ -904,42 +933,52 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
             if not member:
                 # Try different name matching methods
                 for m in interaction.guild.members:
-                    if (input_value in m.name.lower() or 
-                        input_value in m.display_name.lower() or 
-                        input_value == str(m.id) or
-                        (m.nick and input_value in m.nick.lower())):
+                    if (input_value in m.name.lower()
+                            or input_value in m.display_name.lower()
+                            or input_value == str(m.id)
+                            or (m.nick and input_value in m.nick.lower())):
                         member = m
                         break
 
             if not member:
                 # Show active members if not found
-                active_members = [m for m in interaction.guild.members if not m.bot][:10]
-                names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
+                active_members = [
+                    m for m in interaction.guild.members if not m.bot
+                ][:10]
+                names_list = "\n".join(f"{m.display_name} (ID: {m.id})"
+                                       for m in active_members)
                 await interaction.response.send_message(
                     f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
-                    ephemeral=True
-                )
+                    ephemeral=True)
                 return
 
             points = int(self.points.value)
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                      (member.id, ))
             result = c.fetchone()
 
             if result and result[0] >= points:
-                c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", (points, member.id))
+                c.execute(
+                    "UPDATE rewards SET points = points - ? WHERE user_id = ?",
+                    (points, member.id))
                 conn.commit()
-                await interaction.response.send_message(f"✅ Removed {points} points from {member.display_name}", ephemeral=True)
+                await interaction.response.send_message(
+                    f"✅ Removed {points} points from {member.display_name}",
+                    ephemeral=True)
             else:
-                await interaction.response.send_message(f"❌ {member.display_name} does not have enough points.", ephemeral=True)
+                await interaction.response.send_message(
+                    f"❌ {member.display_name} does not have enough points.",
+                    ephemeral=True)
             conn.close()
         except ValueError:
-            await interaction.response.send_message("❌ Invalid input format", ephemeral=True)
+            await interaction.response.send_message("❌ Invalid input format",
+                                                    ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f"❌ An error occurred: {e}", ephemeral=True)
-
+            await interaction.response.send_message(
+                f"❌ An error occurred: {e}", ephemeral=True)
 
 
 @bot.command()
@@ -951,7 +990,6 @@ async def admin(ctx):
         description="Use the buttons below to manage orders and users",
         color=discord.Color.red())
     await ctx.send(embed=embed, view=AdminView(), ephemeral=True)
-
 
 
 @bot.tree.command(name="view_all_orders",
@@ -967,7 +1005,7 @@ async def view_all_orders(interaction: discord.Interaction):
     embed = discord.Embed(title="📋 All Orders", color=discord.Color.blue())
     for order in orders:
         member = interaction.guild.get_member(order[1])
-        username = member.name if member else "Unknown User" #Handle cases where member is not found
+        username = member.name if member else "Unknown User"  #Handle cases where member is not found
         embed.add_field(
             name=f"Order #{order[0]}",
             value=
@@ -1106,10 +1144,9 @@ async def signup_rewards(interaction: discord.Interaction):
             conn.close()
 
 
-@bot.tree.command(name="vip_report",
-                  description="Generate VIPbusiness report")
+@bot.tree.command(name="vip_report", description="Generate VIPbusiness report")
 @is_admin()
-async def vip_report(interaction:discord.Interaction):
+async def vip_report(interaction: discord.Interaction):
     conn = sqlite3.connect('orders.db')
     c = conn.cursor()
 
@@ -1228,68 +1265,80 @@ class RedeemView(discord.ui.View):
                 "❌ No vendor rewards available!", ephemeral=True)
             return
 
-        embed = discord.Embed(title="🏪 Available Vendor Rewards",
-                              description="Click the buttons below to claim rewards:",
-                              color=discord.Color.gold())
+        embed = discord.Embed(
+            title="🏪 Available Vendor Rewards",
+            description="Click the buttons below to claim rewards:",
+            color=discord.Color.gold())
 
         view = discord.ui.View()
 
         for reward in rewards:
-            embed.add_field(name=f"ID #{reward[0]}: {reward[2]} ({reward[3]} points)",
-                            value=reward[4],
-                            inline=False)
+            embed.add_field(
+                name=f"ID #{reward[0]}: {reward[2]} ({reward[3]} points)",
+                value=reward[4],
+                inline=False)
 
-            button = discord.ui.Button(
-                label=f"Claim {reward[2]}", 
-                style=discord.ButtonStyle.success, 
-                custom_id=f"claim_vendor_{reward[0]}"
-            )
+            button = discord.ui.Button(label=f"Claim {reward[2]}",
+                                       style=discord.ButtonStyle.success,
+                                       custom_id=f"claim_vendor_{reward[0]}")
 
-            async def claim_callback(interaction: discord.Interaction, reward_id: int = reward[0]):
+            async def claim_callback(interaction: discord.Interaction,
+                                     reward_id: int = reward[0]):
                 conn = sqlite3.connect('orders.db')
                 c = conn.cursor()
 
                 # Get reward details
-                c.execute("SELECT * FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+                c.execute("SELECT * FROM vendor_rewards WHERE reward_id = ?",
+                          (reward_id, ))
                 reward_data = c.fetchone()
 
                 if not reward_data:
-                    await interaction.response.send_message("❌ Reward no longer available!", ephemeral=True)
+                    await interaction.response.send_message(
+                        "❌ Reward no longer available!", ephemeral=True)
                     conn.close()
                     return
 
                 # Check user points
-                c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+                c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                          (interaction.user.id, ))
                 user_points = c.fetchone()
 
                 if not user_points or user_points[0] < reward_data[3]:
-                    await interaction.response.send_message(f"❌ Not enough points! You need {reward_data[3]} points.", ephemeral=True)
+                    await interaction.response.send_message(
+                        f"❌ Not enough points! You need {reward_data[3]} points.",
+                        ephemeral=True)
                     conn.close()
                     return
 
                 # Deduct points and log redemption
-                c.execute("UPDATE rewards SET points = points - ? WHERE user_id = ?", 
-                         (reward_data[3], interaction.user.id))
+                c.execute(
+                    "UPDATE rewards SET points = points - ? WHERE user_id = ?",
+                    (reward_data[3], interaction.user.id))
                 conn.commit()
                 conn.close()
 
                 # Notify staff
-                staff_channel = interaction.client.get_channel(1337712800453230643)
+                staff_channel = interaction.client.get_channel(
+                    1337712800453230643)
                 if staff_channel:
                     log_embed = discord.Embed(
                         title="🏪 Vendor Reward Claimed",
-                        description=f"User: {interaction.user.mention}\nReward: {reward_data[2]}\nPoints: {reward_data[3]}",
+                        description=
+                        f"User: {interaction.user.mention}\nReward: {reward_data[2]}\nPoints: {reward_data[3]}",
                         color=discord.Color.gold(),
-                        timestamp=datetime.now()
-                    )
+                        timestamp=datetime.now())
                     await staff_channel.send(embed=log_embed)
 
-                await interaction.response.send_message(f"✅ Successfully claimed {reward_data[2]}!", ephemeral=True)
+                await interaction.response.send_message(
+                    f"✅ Successfully claimed {reward_data[2]}!",
+                    ephemeral=True)
 
             button.callback = lambda i, r=reward[0]: claim_callback(i, r)
             view.add_item(button)
 
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=embed,
+                                                view=view,
+                                                ephemeral=True)
 
     async def process_redemption(self, interaction: discord.Interaction,
                                  cost: int, item: str):
@@ -1303,13 +1352,13 @@ class RedeemView(discord.ui.View):
         c = conn.cursor()
 
         # Verify current points and deduct
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+        c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                  (interaction.user.id, ))
         current_points = c.fetchone()
 
         if not current_points or current_points[0] < cost:
             await interaction.response.send_message(
-                "❌ Insufficient points for this redemption.",
-                ephemeral=True)
+                "❌ Insufficient points for this redemption.", ephemeral=True)
             conn.close()
             return
 
@@ -1318,15 +1367,15 @@ class RedeemView(discord.ui.View):
         conn.commit()
 
         # Get updated points
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (interaction.user.id,))
+        c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                  (interaction.user.id, ))
         new_points = c.fetchone()[0]
         conn.close()
 
         # Send confirmation to user
         user_embed = discord.Embed(
             title="🎉 Reward Redeemed!",
-            description=
-            f"Successfully redeemed **{item}** for {cost} points!\n"
+            description=f"Successfully redeemed **{item}** for {cost} points!\n"
             f"Remaining points: **{new_points}**\n"
             f"A staff member will contact you soon!",
             color=discord.Color.green())
@@ -1350,71 +1399,82 @@ class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
         label="Your Complaint",
         style=discord.TextStyle.long,
         placeholder="Please describe your complaint in detail...",
-        required=True
-    )
+        required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute("INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
-                     (interaction.user.id, self.complaint.value))
+            c.execute(
+                "INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
+                (interaction.user.id, self.complaint.value))
             conn.commit()
             conn.close()
 
             # Send to complaints channel
-            complaints_channel = interaction.client.get_channel(1337706481755095100)
+            complaints_channel = interaction.client.get_channel(
+                1337706481755095100)
             if complaints_channel:
                 embed = discord.Embed(
                     title="⚠️ New Complaint Filed",
-                    description=f"From: {interaction.user.mention}\n\n{self.complaint.value}",
+                    description=
+                    f"From: {interaction.user.mention}\n\n{self.complaint.value}",
                     color=discord.Color.red(),
-                    timestamp=datetime.now()
-                )
+                    timestamp=datetime.now())
                 await complaints_channel.send(embed=embed)
 
-            await interaction.response.send_message("✅ Your complaint has been filed and will be reviewed by staff.", ephemeral=True)
+            await interaction.response.send_message(
+                "✅ Your complaint has been filed and will be reviewed by staff.",
+                ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message("❌ An error occurred while filing your complaint.", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ An error occurred while filing your complaint.",
+                ephemeral=True)
+
 
 class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
     suggestion = discord.ui.TextInput(
         label="Your Suggestion",
         style=discord.TextStyle.long,
         placeholder="Share your ideas with us...",
-        required=True
-    )
+        required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            c.execute("INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
-                     (interaction.user.id, self.suggestion.value))
+            c.execute(
+                "INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
+                (interaction.user.id, self.suggestion.value))
             conn.commit()
             conn.close()
 
             # Send to suggestions channel
-            suggestions_channel = interaction.client.get_channel(1337706421545996399)
+            suggestions_channel = interaction.client.get_channel(
+                1337706421545996399)
             if suggestions_channel:
                 embed = discord.Embed(
                     title="💡 New Suggestion Received",
-                    description=f"From: {interaction.user.mention}\n\n{self.suggestion.value}",
+                    description=
+                    f"From: {interaction.user.mention}\n\n{self.suggestion.value}",
                     color=discord.Color.green(),
-                    timestamp=datetime.now()
-                )
+                    timestamp=datetime.now())
                 await suggestions_channel.send(embed=embed)
 
-            await interaction.response.send_message("✅ Thank you for your suggestion!", ephemeral=True)
+            await interaction.response.send_message(
+                "✅ Thank you for your suggestion!", ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message("❌ An error occurred while submitting your suggestion.", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ An error occurred while submitting your suggestion.",
+                ephemeral=True)
 
-class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Reward"):
+
+class RemoveVendorRewardModal(discord.ui.Modal,
+                              title="🗑️ Remove Vendor Reward"):
     reward_id = discord.ui.TextInput(
         label="Reward ID",
         placeholder="Enter the reward ID to remove",
-        required=True
-    )
+        required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
@@ -1423,27 +1483,34 @@ class RemoveVendorRewardModal(discord.ui.Modal, title="🗑️ Remove Vendor Rew
             c = conn.cursor()
 
             # Check if reward exists and belongs to the user
-            c.execute("SELECT vendor_id FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+            c.execute(
+                "SELECT vendor_id FROM vendor_rewards WHERE reward_id = ?",
+                (reward_id, ))
             result = c.fetchone()
 
             if not result:
-                await interaction.response.send_message("❌ Reward not found!", ephemeral=True)
+                await interaction.response.send_message("❌ Reward not found!",
+                                                        ephemeral=True)
                 conn.close()
                 return
 
             if result[0] != interaction.user.id:
-                await interaction.response.send_message("❌ You can only remove your own rewards!", ephemeral=True)
+                await interaction.response.send_message(
+                    "❌ You can only remove your own rewards!", ephemeral=True)
                 conn.close()
                 return
 
-            c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?", (reward_id,))
+            c.execute("DELETE FROM vendor_rewards WHERE reward_id = ?",
+                      (reward_id, ))
             conn.commit()
             conn.close()
 
-            await interaction.response.send_message("✅ Reward removed successfully!", ephemeral=True)
+            await interaction.response.send_message(
+                "✅ Reward removed successfully!", ephemeral=True)
 
         except ValueError:
-            await interaction.response.send_message("❌ Please enter a valid reward ID!", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ Please enter a valid reward ID!", ephemeral=True)
 
 
 class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
@@ -1499,28 +1566,36 @@ class VendorRewardModal(discord.ui.Modal, title="🏪 Add Vendor Reward"):
 @bot.tree.command(name="vendor_add", description="Add a new vendor reward")
 async def vendor_add(interaction: discord.Interaction):
     if not any(role.name == "Partner" for role in interaction.user.roles):
-        await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
+        await interaction.response.send_message(
+            "❌ You need the Partner role to use this command!", ephemeral=True)
         return
     modal = VendorRewardModal()
     await interaction.response.send_modal(modal)
 
+
 @bot.tree.command(name="vendor_remove", description="Remove a vendor reward")
 async def vendor_remove(interaction: discord.Interaction):
     if not any(role.name == "Partner" for role in interaction.user.roles):
-        await interaction.response.send_message("❌ You need the Partner role to use this command!", ephemeral=True)
+        await interaction.response.send_message(
+            "❌ You need the Partner role to use this command!", ephemeral=True)
         return
     modal = RemoveVendorRewardModal()
     await interaction.response.send_modal(modal)
 
-@bot.tree.command(name="suggestion", description="Make a suggestion to improve Sweet Holes")
+
+@bot.tree.command(name="suggestion",
+                  description="Make a suggestion to improve Sweet Holes")
 async def suggestion(interaction: discord.Interaction):
     """Submit a suggestion through slash command"""
     if interaction.channel_id != 1337508683286052895:
-        await interaction.response.send_message("❌ Please use this command in the suggestions channel!", ephemeral=True)
+        await interaction.response.send_message(
+            "❌ Please use this command in the suggestions channel!",
+            ephemeral=True)
         return
 
     modal = SuggestionModal()
     await interaction.response.send_modal(modal)
+
 
 # Add points command is now handled in on_ready
 
@@ -1549,7 +1624,8 @@ async def on_member_join(member):
             f"• VIP membership\n"
             f"• Daily bonuses",
             color=discord.Color.gold())
-        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.
+                            default_avatar.url)
         embed.set_footer(text="We're excited to have you here! 💖")
         await welcome_channel.send(embed=embed)
 
@@ -1561,12 +1637,12 @@ async def on_member_remove(member):
     if goodbye_channel:
         embed = discord.Embed(
             title="👋 See You Soon!",
-            description=
-            f"Goodbye {member.name}!\n"
+            description=f"Goodbye {member.name}!\n"
             f"Thanks for being part of our sweet community.\n"
             f"You're always welcome back! 🍩",
             color=discord.Color.blue())
-        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+        embed.set_thumbnail(url=member.avatar.url if member.avatar else member.
+                            default_avatar.url)
         embed.set_footer(text="Until next time! 💝")
         await goodbye_channel.send(embed=embed)
 
@@ -1592,7 +1668,7 @@ async def on_message(message):
 
     # Award points for activity
     points = random.randint(1, 3)  # Random points between 1-3
-    conn =sqlite3.connect('orders.db')
+    conn = sqlite3.connect('orders.db')
     c = conn.cursor()
 
     c.execute(
@@ -1632,10 +1708,12 @@ async def on_reaction_add(reaction, user):
 
 @bot.tree.command(name="add_points", description="Add points to a member")
 @is_admin()
-async def add_points(interaction: discord.Interaction, member: discord.Member, points: int):
+async def add_points(interaction: discord.Interaction, member: discord.Member,
+                     points: int):
     try:
         if points <= 0:
-            await interaction.response.send_message("❌ Points must be positive!", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ Points must be positive!", ephemeral=True)
             return
 
         conn = sqlite3.connect('orders.db')
@@ -1643,71 +1721,76 @@ async def add_points(interaction: discord.Interaction, member: discord.Member, p
 
         try:
             # First check if user exists
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                      (member.id, ))
             result = c.fetchone()
 
             if result:
                 # Update existing user
                 c.execute(
                     "UPDATE rewards SET points = points + ?, username = ? WHERE user_id = ?",
-                    (points, member.display_name, member.id)
-                )
+                    (points, member.display_name, member.id))
             else:
                 # Insert new user
                 c.execute(
                     "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?)",
-                    (member.id, points, member.display_name)
-                )
+                    (member.id, points, member.display_name))
 
             conn.commit()
 
             # Get new total
-            c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+            c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                      (member.id, ))
             new_total = c.fetchone()[0]
 
             await interaction.response.send_message(
                 f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
-                ephemeral=True
-            )
+                ephemeral=True)
         except sqlite3.Error as e:
-            await interaction.response.send_message(f"❌ Database error: {str(e)}", ephemeral=True)
+            await interaction.response.send_message(
+                f"❌ Database error: {str(e)}", ephemeral=True)
         finally:
             conn.close()
 
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+        await interaction.response.send_message(f"❌ Error: {str(e)}",
+                                                ephemeral=True)
 
-@bot.tree.command(name="remove_points", description="Remove points from a member")
+
+@bot.tree.command(name="remove_points",
+                  description="Remove points from a member")
 @is_admin()
-async def remove_points(interaction: discord.Interaction, member: discord.Member, points: int):
+async def remove_points(interaction: discord.Interaction,
+                        member: discord.Member, points: int):
     try:
         if points <= 0:
-            await interaction.response.send_message("❌ Points must be positive!", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ Points must be positive!", ephemeral=True)
             return
 
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
 
         # Check current points
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+        c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                  (member.id, ))
         result = c.fetchone()
 
         if not result or result[0] < points:
             await interaction.response.send_message(
                 f"❌ {member.display_name} doesn't have enough points to remove!",
-                ephemeral=True
-            )
+                ephemeral=True)
             conn.close()
             return
 
         # Remove points and update username
         c.execute(
             "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
-            (points, member.display_name, member.id)
-        )
+            (points, member.display_name, member.id))
 
         # Get new total
-        c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
+        c.execute("SELECT points FROM rewards WHERE user_id = ?",
+                  (member.id, ))
         new_total = c.fetchone()[0]
 
         conn.commit()
@@ -1715,12 +1798,14 @@ async def remove_points(interaction: discord.Interaction, member: discord.Member
 
         await interaction.response.send_message(
             f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
-            ephemeral=True
-        )
+            ephemeral=True)
     except Exception as e:
-        await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
+        await interaction.response.send_message(f"❌ Error: {str(e)}",
+                                                ephemeral=True)
 
-@bot.tree.command(name="git_pull", description="Pull latest changes from GitHub repository")
+
+@bot.tree.command(name="git_pull",
+                  description="Pull latest changes from GitHub repository")
 @is_admin()
 async def git_pull(interaction: discord.Interaction):
     try:
@@ -1728,18 +1813,22 @@ async def git_pull(interaction: discord.Interaction):
 
         # Execute git pull
         import subprocess
-        process = subprocess.Popen(['git', 'pull'], 
-                                 stdout=subprocess.PIPE, 
-                                 stderr=subprocess.PIPE)
+        process = subprocess.Popen(['git', 'pull'],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
         if process.returncode == 0:
-            await interaction.followup.send("✅ Successfully pulled latest changes!", ephemeral=True)
+            await interaction.followup.send(
+                "✅ Successfully pulled latest changes!", ephemeral=True)
         else:
             error_msg = stderr.decode('utf-8')
-            await interaction.followup.send(f"❌ Failed to pull changes: {error_msg}", ephemeral=True)
+            await interaction.followup.send(
+                f"❌ Failed to pull changes: {error_msg}", ephemeral=True)
     except Exception as e:
-        await interaction.followup.send(f"❌ Error executing git pull: {str(e)}", ephemeral=True)
+        await interaction.followup.send(
+            f"❌ Error executing git pull: {str(e)}", ephemeral=True)
+
 
 @bot.event
 async def on_ready():
@@ -1791,16 +1880,18 @@ async def on_ready():
 
         c.execute('''CREATE TABLE IF NOT EXISTS complaints
                      (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                  )
 
         c.execute('''CREATE TABLE IF NOT EXISTS suggestions
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                  )
 
         c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
                      (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)''')
-
+                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)'''
+                  )
 
         conn.commit()
         conn.close()
@@ -1840,24 +1931,32 @@ async def on_ready():
                         label="💝 Check My Tier",
                         style=discord.ButtonStyle.blurple)
 
-                    async def check_tier_callback(interaction: discord.Interaction):
+                    async def check_tier_callback(
+                            interaction: discord.Interaction):
                         if interaction.channel_id != 1337508683684384846:
-                            await interaction.response.send_message("❌ This command can only be used in the check tier channel!", ephemeral=True)
+                            await interaction.response.send_message(
+                                "❌ This command can only be used in the check tier channel!",
+                                ephemeral=True)
                             return
 
                         user_id = interaction.user.id
                         conn = sqlite3.connect('orders.db')
                         c = conn.cursor()
-                        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
+                        c.execute(
+                            "SELECT loyalty_tier, points FROM rewards WHERE user_id = ?",
+                            (user_id, ))
                         result = c.fetchone()
                         conn.close()
 
-                        tier, points = result if result else ("Flirty Bronze", 0)
+                        tier, points = result if result else ("Flirty Bronze",
+                                                              0)
                         embed = discord.Embed(
                             title="💖 Your VIP Sweet Holes Card 💖",
-                            description=f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
+                            description=
+                            f"👤 **{interaction.user.display_name}**\n🏅 **Tier:** {tier}\n🎁 **Points:** {points}",
                             color=discord.Color.pink())
-                        await interaction.response.send_message(embed=embed, ephemeral=True)
+                        await interaction.response.send_message(embed=embed,
+                                                                ephemeral=True)
 
                     check_tier_button.callback = check_tier_callback
                     view.add_item(check_tier_button)
@@ -1900,7 +1999,7 @@ async def on_ready():
                     async def job_callback(interaction: discord.Interaction):
                         if interaction.channel.id != 1337508683286052894:
                             await interaction.response.send_message(
-"❌ Wrong channel!", ephemeral=True)
+                                "❌ Wrong channel!", ephemeral=True)
                             return
                         response_channel = channels['response']
                         modal = ApplicationModal(response_channel)
@@ -1951,15 +2050,18 @@ async def on_ready():
 
                 elif channel_name == 'vendor':
                     # Initialize vendor management in the specified channel
-                    vendor_management_channel = bot.get_channel(1337709954336952391)
+                    vendor_management_channel = bot.get_channel(
+                        1337709954336952391)
                     if vendor_management_channel:
                         await vendor_management_channel.purge(limit=100)
                         embed = discord.Embed(
                             title="🏪 Vendor Reward Management",
-                            description="Click below to manage your vendor rewards!",
+                            description=
+                            "Click below to manage your vendor rewards!",
                             color=discord.Color.blue())
 
-                        view = discord.ui.View(timeout=None)  # Make the view persistent
+                        view = discord.ui.View(
+                            timeout=None)  # Make the view persistent
 
                 elif channel_name == 'points_management':
                     points_management_channel = channels['points_management']
@@ -1971,28 +2073,45 @@ async def on_ready():
                             color=discord.Color.blue())
 
                         class PointsManagementView(discord.ui.View):
+
                             def __init__(self):
                                 super().__init__(timeout=None)
 
-                            @discord.ui.button(label="➕ Add Points", style=discord.ButtonStyle.success)
-                            async def add_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
-                                    await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+                            @discord.ui.button(
+                                label="➕ Add Points",
+                                style=discord.ButtonStyle.success)
+                            async def add_points_button(
+                                    self, interaction: discord.Interaction,
+                                    button: discord.ui.Button):
+                                if not discord.utils.get(
+                                        interaction.user.roles,
+                                        name=ADMIN_ROLE_NAME):
+                                    await interaction.response.send_message(
+                                        "❌ You don't have permission to do this!",
+                                        ephemeral=True)
                                     return
                                 modal = GivePointsModal()
                                 await interaction.response.send_modal(modal)
 
-
-                            @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger)
-                            async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                                if not discord.utils.get(interaction.user.roles, name=ADMIN_ROLE_NAME):
-                                    await interaction.response.send_message("❌ You don't have permission to do this!", ephemeral=True)
+                            @discord.ui.button(
+                                label="➖ Remove Points",
+                                style=discord.ButtonStyle.danger)
+                            async def remove_points_button(
+                                    self, interaction: discord.Interaction,
+                                    button: discord.ui.Button):
+                                if not discord.utils.get(
+                                        interaction.user.roles,
+                                        name=ADMIN_ROLE_NAME):
+                                    await interaction.response.send_message(
+                                        "❌ You don't have permission to do this!",
+                                        ephemeral=True)
                                     return
                                 modal = RemovePointsModal()
                                 await interaction.response.send_modal(modal)
 
                         view = PointsManagementView()
-                        await points_management_channel.send(embed=embed, view=view)
+                        await points_management_channel.send(embed=embed,
+                                                             view=view)
 
                 elif channel_name == 'complaints':
                     await channel.purge(limit=100)  # Clear existing messages
@@ -2010,26 +2129,38 @@ async def on_ready():
                             await suggestions_channel.purge(limit=100)
                             embed = discord.Embed(
                                 title="💡 Make a Suggestion",
-                                description="Have an idea to make Sweet Holes even better? Share it with us!",
+                                description=
+                                "Have an idea to make Sweet Holes even better? Share it with us!",
                                 color=discord.Color.green())
 
                             class SuggestionView(discord.ui.View):
+
                                 def __init__(self):
                                     super().__init__(timeout=None)
 
-                                @discord.ui.button(label="💡 Make Suggestion", style=discord.ButtonStyle.success, custom_id="suggestion_button")
-                                async def suggest_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                                @discord.ui.button(
+                                    label="💡 Make Suggestion",
+                                    style=discord.ButtonStyle.success,
+                                    custom_id="suggestion_button")
+                                async def suggest_button(
+                                        self, interaction: discord.Interaction,
+                                        button: discord.ui.Button):
                                     if interaction.channel_id != 1337508683286052895:
-                                        await interaction.response.send_message("❌ Please use this in the suggestions channel!", ephemeral=True)
+                                        await interaction.response.send_message(
+                                            "❌ Please use this in the suggestions channel!",
+                                            ephemeral=True)
                                         return
                                     modal = SuggestionModal()
-                                    await interaction.response.send_modal(modal)
+                                    await interaction.response.send_modal(modal
+                                                                          )
 
                             view = SuggestionView()
-                            await suggestions_channel.send(embed=embed, view=view)
+                            await suggestions_channel.send(embed=embed,
+                                                           view=view)
                             print("✅ Suggestions button setup complete")
                         except Exception as e:
-                            print(f"❌ Error setting up suggestions button: {e}")
+                            print(
+                                f"❌ Error setting up suggestions button: {e}")
 
     except Exception as e:
         print(f"❌ Startup Error: {str(e)}")
@@ -2048,7 +2179,8 @@ async def on_ready():
         async def vendor_add(interaction: discord.Interaction):
             if not any(role.name == "Partner"
                        for role in interaction.user.roles):
-                await interaction.response.send_message("❌ You need the Partner role to use this command!",
+                await interaction.response.send_message(
+                    "❌ You need the Partner role to use this command!",
                     ephemeral=True)
                 return
             await show_vendor_add_menu(interaction)
@@ -2115,15 +2247,18 @@ async def on_ready():
 
         c.execute('''CREATE TABLE IF NOT EXISTS complaints
                      (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                  )
 
         c.execute('''CREATE TABLE IF NOT EXISTS suggestions
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                  )
 
         c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
                      (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)''')
+                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)'''
+                  )
 
         conn.commit()
         conn.close()
@@ -2144,8 +2279,6 @@ async def on_ready():
         vendor_channel = bot.get_channel(1337705856061407283)
         vendor_management_channel = bot.get_channel(1337709954336952391)
         redeem_channel = bot.get_channel(1337508683684384847)
-
-
 
         # Set up VIP application button in membership channel
         if membership_channel:
@@ -2168,12 +2301,8 @@ async def on_ready():
 
         # Clear messages only in specific channels, preserving membership and vendor history
         channels_to_purge = {
-            menu_channel,
-            order_channel,
-            tier_channel,
-            complaints_channel,
-            suggestion_channel,
-            redeem_channel
+            menu_channel, order_channel, tier_channel, complaints_channel,
+            suggestion_channel, redeem_channel
         }
 
         for channel in channels_to_purge:
@@ -2199,8 +2328,7 @@ async def on_ready():
             await tier_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💖 Check Your VIP Status 💖",
-                description=
-                "Use `/my_tier` to check your tier and points!",
+                description="Use `/my_tier` to check your tier and points!",
                 color=discord.Color.pink())
             await tier_channel.send(embed=embed)
 
@@ -2210,7 +2338,6 @@ async def on_ready():
                 description="Welcome to our exclusive membership area!",
                 color=discord.Color.gold())
             await membership_channel.send(embed=embed)
-
 
         if complaints_channel:
             await complaints_channel.purge(limit=100)
@@ -2224,14 +2351,17 @@ async def on_ready():
             await suggestion_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💡 Make a Suggestion",
-                description="Have an idea to make Sweet Holes even better? Click below!",
+                description=
+                "Have an idea to make Sweet Holes even better? Click below!",
                 color=discord.Color.green())
             view = discord.ui.View(timeout=None)  # Make view persistent
-            suggest_button = discord.ui.Button(label="💡 Make Suggestion", style=discord.ButtonStyle.success)
+            suggest_button = discord.ui.Button(
+                label="💡 Make Suggestion", style=discord.ButtonStyle.success)
 
             async def suggest_callback(interaction: discord.Interaction):
                 if interaction.channel_id != 1337508683286052895:
-                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    await interaction.response.send_message("❌ Wrong channel!",
+                                                            ephemeral=True)
                     return
                 modal = SuggestionModal()
                 await interaction.response.send_modal(modal)
@@ -2246,17 +2376,21 @@ async def on_ready():
                 description="Click below to add or manage your vendor rewards!",
                 color=discord.Color.blue())
             view = discord.ui.View()
-            add_button = discord.ui.Button(
-                label="➕ Add Reward", style=discord.ButtonStyle.primary)
-            remove_button = discord.ui.Button(
-                label="🗑️ Remove Reward", style=discord.ButtonStyle.danger)
+            add_button = discord.ui.Button(label="➕ Add Reward",
+                                           style=discord.ButtonStyle.primary)
+            remove_button = discord.ui.Button(label="🗑️ Remove Reward",
+                                              style=discord.ButtonStyle.danger)
 
             async def remove_callback(interaction: discord.Interaction):
                 if interaction.channel.id != 1337705856061407283:
-                    await interaction.response.send_message("❌ Wrong channel!", ephemeral=True)
+                    await interaction.response.send_message("❌ Wrong channel!",
+                                                            ephemeral=True)
                     return
-                if not any(role.name == "Partner" for role in interaction.user.roles):
-                    await interaction.response.send_message("❌ You need the Partner role to use this!", ephemeral=True)
+                if not any(role.name == "Partner"
+                           for role in interaction.user.roles):
+                    await interaction.response.send_message(
+                        "❌ You need the Partner role to use this!",
+                        ephemeral=True)
                     return
                 modal = RemoveVendorRewardModal()
                 await interaction.response.send_modal(modal)
@@ -2314,11 +2448,13 @@ async def on_ready():
             view.add_item(redeem_button)
             await redeem_channel.send(embed=embed, view=view)
 
-
         # Verify database tables
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        tables = ['orders', 'rewards', 'feedback', 'complaints', 'suggestions', 'vendor_rewards']
+        tables = [
+            'orders', 'rewards', 'feedback', 'complaints', 'suggestions',
+            'vendor_rewards'
+        ]
         for table in tables:
             c.execute(
                 f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'"
@@ -2332,6 +2468,7 @@ async def on_ready():
 
 # Import and start the keep_alive server first
 from keepalive import keep_alive
+
 keep_alive()  # This starts the Flask server in a separate thread
 
 # Then continue with bot setup and execution
@@ -2339,12 +2476,16 @@ keep_alive()  # This starts the Flask server in a separate thread
 # Then run the bot with the token
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not TOKEN:
-    print("❌ Error: No Discord bot token found! Please add DISCORD_BOT_TOKEN in the Secrets tab.")
+    print(
+        "❌ Error: No Discord bot token found! Please add DISCORD_BOT_TOKEN in the Secrets tab."
+    )
     exit(1)
 
 # Validate token format
 if not TOKEN.strip().startswith(('M', 'N', 'O')):
-    print("❌ Error: Invalid Discord bot token format. Please check your token in the Secrets tab.")
+    print(
+        "❌ Error: Invalid Discord bot token format. Please check your token in the Secrets tab."
+    )
     exit(1)
 
 try:
@@ -2354,7 +2495,8 @@ except discord.LoginFailure:
     exit(1)
 except discord.PrivilegedIntentsRequired:
     print("❌ Error: Required privileged intents are not enabled for this bot.")
-    print("Please enable the necessary intents in the Discord Developer Portal.")
+    print(
+        "Please enable the necessary intents in the Discord Developer Portal.")
     exit(1)
 except Exception as e:
     print(f"❌ Failed to start bot: {str(e)}")
