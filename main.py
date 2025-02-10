@@ -136,15 +136,15 @@ class ApplicationModal(discord.ui.Modal,
                             inline=False)
 
             await self.response_channel.send(embed=embed)
-            
+
             # Add user to rewards table with welcome bonus
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             # Check if user already exists in rewards
             c.execute("SELECT user_id FROM rewards WHERE user_id = ?", (interaction.user.id,))
             existing_user = c.fetchone()
-            
+
             if not existing_user:
                 # Add new user with welcome bonus
                 c.execute(
@@ -158,7 +158,7 @@ class ApplicationModal(discord.ui.Modal,
                 await interaction.response.send_message(
                     "✅ Your application has been submitted! We'll review it soon.",
                     ephemeral=True)
-            
+
             conn.close()
         except Exception as e:
             print(f"Application Error: {str(e)}")
@@ -697,20 +697,20 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             # Add points and update username
             c.execute(
                 "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
                 (member.id, points, member.display_name, points, member.display_name)
             )
-            
+
             # Get new total
             c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
             new_total = c.fetchone()[0]
-            
+
             conn.commit()
             conn.close()
-            
+
             await interaction.response.send_message(
                 f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
                 ephemeral=True
@@ -782,8 +782,7 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
                     ephemeral=True)
 
             except sqlite3.Error as e:
-                await interaction.response.send_message(
-                    f"❌ Database error: {str(e)}", ephemeral=True)
+                await interaction.response.send_message                    f"❌ Database error: {str(e)}", ephemeral=True)
             finally:
                 conn.close()
 
@@ -857,14 +856,14 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
                     ephemeral=True
                 )
                 return
-            
+
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
-            
+
             # Check current points
             c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
             result = c.fetchone()
-            
+
             if not result or result[0] < points:
                 await interaction.response.send_message(
                     f"❌ {member.display_name} doesn't have enough points to remove!",
@@ -872,20 +871,20 @@ class RemovePointsModal(discord.ui.Modal, title="➖ Remove Points"):
                 )
                 conn.close()
                 return
-            
+
             # Remove points and update username
             c.execute(
                 "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
                 (points, member.display_name, member.id)
             )
-            
+
             # Get new total
             c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
             new_total = c.fetchone()[0]
-            
+
             conn.commit()
             conn.close()
-            
+
             await interaction.response.send_message(
                 f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
                 ephemeral=True
@@ -1586,7 +1585,7 @@ async def on_message(message):
 
     # Award points for activity
     points = random.randint(1, 3)  # Random points between 1-3
-    conn = sqlite3.connect('orders.db')
+    conn =sqlite3.connect('orders.db')
     c = conn.cursor()
 
     c.execute(
@@ -1631,15 +1630,15 @@ async def add_points(interaction: discord.Interaction, member: discord.Member, p
         if points <= 0:
             await interaction.response.send_message("❌ Points must be positive!", ephemeral=True)
             return
-            
+
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         try:
             # First check if user exists
             c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
             result = c.fetchone()
-            
+
             if result:
                 # Update existing user
                 c.execute(
@@ -1652,13 +1651,13 @@ async def add_points(interaction: discord.Interaction, member: discord.Member, p
                     "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?)",
                     (member.id, points, member.display_name)
                 )
-            
+
             conn.commit()
-            
+
             # Get new total
             c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
             new_total = c.fetchone()[0]
-            
+
             await interaction.response.send_message(
                 f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
                 ephemeral=True
@@ -1667,7 +1666,7 @@ async def add_points(interaction: discord.Interaction, member: discord.Member, p
             await interaction.response.send_message(f"❌ Database error: {str(e)}", ephemeral=True)
         finally:
             conn.close()
-            
+
     except Exception as e:
         await interaction.response.send_message(f"❌ Error: {str(e)}", ephemeral=True)
 
@@ -1678,14 +1677,14 @@ async def remove_points(interaction: discord.Interaction, member: discord.Member
         if points <= 0:
             await interaction.response.send_message("❌ Points must be positive!", ephemeral=True)
             return
-            
+
         conn = sqlite3.connect('orders.db')
         c = conn.cursor()
-        
+
         # Check current points
         c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
         result = c.fetchone()
-        
+
         if not result or result[0] < points:
             await interaction.response.send_message(
                 f"❌ {member.display_name} doesn't have enough points to remove!",
@@ -1693,20 +1692,20 @@ async def remove_points(interaction: discord.Interaction, member: discord.Member
             )
             conn.close()
             return
-            
+
         # Remove points and update username
         c.execute(
             "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
             (points, member.display_name, member.id)
         )
-        
+
         # Get new total
         c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
         new_total = c.fetchone()[0]
-        
+
         conn.commit()
         conn.close()
-        
+
         await interaction.response.send_message(
             f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
             ephemeral=True
@@ -1842,7 +1841,7 @@ async def on_ready():
                         user_id = interaction.user.id
                         conn = sqlite3.connect('orders.db')
                         c = conn.cursor()
-                        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user<previous_generation>id = ?", (user_id,))
+                        c.execute("SELECT loyalty_tier, points FROM rewards WHERE user_id = ?", (user_id,))
                         result = c.fetchone()
                         conn.close()
 
@@ -1975,75 +1974,7 @@ async def on_ready():
                                     return
                                 modal = GivePointsModal()
                                 await interaction.response.send_modal(modal)
-                                    
-                                    if points <= 0:
-                                        await interaction.followup.send("❌ Points must be positive!", ephemeral=True)
-                                        return
-                                        
-                                    # Try to find member by ID first
-                                    if input_value.isdigit():
-                                        member = interaction.guild.get_member(int(input_value))
-                                    
-                                    # Try to find by name if ID didn't work
-                                    if not member:
-                                        for m in interaction.guild.members:
-                                            if (input_value == m.name.lower() or 
-                                                input_value == m.display_name.lower() or 
-                                                (m.nick and input_value == m.nick.lower())):
-                                                member = m
-                                                break
-                                    
-                                    if not member:
-                                        matches = []
-                                        for m in interaction.guild.members:
-                                            if (input_value in m.name.lower() or 
-                                                input_value in m.display_name.lower() or 
-                                                (m.nick and input_value in m.nick.lower())):
-                                                matches.append(m)
-                                        
-                                        if len(matches) == 1:
-                                            member = matches[0]
-                                        elif len(matches) > 1:
-                                            names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
-                                            await interaction.followup.send(
-                                                f"❌ Multiple matches found! Please use their ID:\n{names_list}",
-                                                ephemeral=True
-                                            )
-                                            return
-                                    
-                                    if not member:
-                                        active_members = [m for m in interaction.guild.members if not m.bot][:10]
-                                        names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
-                                        await interaction.followup.send(
-                                            f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
-                                            ephemeral=True
-                                        )
-                                        return
-                                    
-                                    conn = sqlite3.connect('orders.db')
-                                    c = conn.cursor()
-                                    
-                                    # Add points and update username
-                                    c.execute(
-                                        "INSERT INTO rewards (user_id, points, username) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET points = points + ?, username = ?",
-                                        (member.id, points, member.display_name, points, member.display_name)
-                                    )
-                                    
-                                    # Get new total
-                                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
-                                    new_total = c.fetchone()[0]
-                                    
-                                    conn.commit()
-                                    conn.close()
-                                    
-                                    await interaction.followup.send(
-                                        f"✅ Added {points} points to {member.display_name}\nNew total: {new_total} points",
-                                        ephemeral=True
-                                    )
-                                except ValueError:
-                                    await interaction.followup.send("❌ Please enter a valid number for points!", ephemeral=True)
-                                except Exception as e:
-                                    await interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
+
 
                             @discord.ui.button(label="➖ Remove Points", style=discord.ButtonStyle.danger)
                             async def remove_points_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -2052,92 +1983,6 @@ async def on_ready():
                                     return
                                 modal = RemovePointsModal()
                                 await interaction.response.send_modal(modal)
-                                    
-                                    # Extract member and points from modal response
-                                    input_value = modal.username.value.lower().strip()
-                                    member = None
-                                    points = int(modal.points.value)
-                                    
-                                    if points <= 0:
-                                        await interaction.followup.send("❌ Points must be positive!", ephemeral=True)
-                                        return
-                                        
-                                    # Try to find member by ID first
-                                    if input_value.isdigit():
-                                        member = interaction.guild.get_member(int(input_value))
-                                    
-                                    # Try to find by name if ID didn't work
-                                    if not member:
-                                        for m in interaction.guild.members:
-                                            if (input_value == m.name.lower() or 
-                                                input_value == m.display_name.lower() or 
-                                                (m.nick and input_value == m.nick.lower())):
-                                                member = m
-                                                break
-                                    
-                                    if not member:
-                                        matches = []
-                                        for m in interaction.guild.members:
-                                            if (input_value in m.name.lower() or 
-                                                input_value in m.display_name.lower() or 
-                                                (m.nick and input_value in m.nick.lower())):
-                                                matches.append(m)
-                                        
-                                        if len(matches) == 1:
-                                            member = matches[0]
-                                        elif len(matches) > 1:
-                                            names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in matches[:10])
-                                            await interaction.followup.send(
-                                                f"❌ Multiple matches found! Please use their ID:\n{names_list}",
-                                                ephemeral=True
-                                            )
-                                            return
-                                    
-                                    if not member:
-                                        active_members = [m for m in interaction.guild.members if not m.bot][:10]
-                                        names_list = "\n".join(f"{m.display_name} (ID: {m.id})" for m in active_members)
-                                        await interaction.followup.send(
-                                            f"❌ User not found! Here are some active members:\n{names_list}\n\nTry using their ID or exact name.",
-                                            ephemeral=True
-                                        )
-                                        return
-                                    
-                                    conn = sqlite3.connect('orders.db')
-                                    c = conn.cursor()
-                                    
-                                    # Check current points
-                                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
-                                    result = c.fetchone()
-                                    
-                                    if not result or result[0] < points:
-                                        await interaction.followup.send(
-                                            f"❌ {member.display_name} doesn't have enough points to remove!",
-                                            ephemeral=True
-                                        )
-                                        conn.close()
-                                        return
-                                    
-                                    # Remove points and update username
-                                    c.execute(
-                                        "UPDATE rewards SET points = points - ?, username = ? WHERE user_id = ?",
-                                        (points, member.display_name, member.id)
-                                    )
-                                    
-                                    # Get new total
-                                    c.execute("SELECT points FROM rewards WHERE user_id = ?", (member.id,))
-                                    new_total = c.fetchone()[0]
-                                    
-                                    conn.commit()
-                                    conn.close()
-                                    
-                                    await interaction.followup.send(
-                                        f"✅ Removed {points} points from {member.display_name}\nNew total: {new_total} points",
-                                        ephemeral=True
-                                    )
-                                except ValueError:
-                                    await interaction.followup.send("❌ Please enter a valid number for points!", ephemeral=True)
-                                except Exception as e:
-                                    await interaction.followup.send(f"❌ An error occurred: {str(e)}", ephemeral=True)
 
                         view = PointsManagementView()
                         await points_management_channel.send(embed=embed, view=view)
