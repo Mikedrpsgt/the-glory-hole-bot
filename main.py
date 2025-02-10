@@ -1975,8 +1975,6 @@ async def on_ready():
                                     return
                                 modal = GivePointsModal()
                                 await interaction.response.send_modal(modal)
-                                    member = None
-                                    points = int(modal.points.value)
                                     
                                     if points <= 0:
                                         await interaction.followup.send("❌ Points must be positive!", ephemeral=True)
