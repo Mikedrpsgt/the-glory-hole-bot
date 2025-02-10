@@ -32,9 +32,11 @@ def setup_database():
                       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards 
-                     (user_id INTEGER PRIMARY KEY, points INTEGER DEFAULT 0,
-                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', last_daily TIMESTAMP,
-                      username TEXT)''')
+                     (user_id INTEGER PRIMARY KEY, 
+                      username TEXT NOT NULL,
+                      points INTEGER DEFAULT 0,
+                      loyalty_tier TEXT DEFAULT 'Flirty Bronze', 
+                      last_daily TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS feedback 
                      (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)'''
