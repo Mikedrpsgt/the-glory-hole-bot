@@ -782,7 +782,7 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
                     ephemeral=True)
 
             except sqlite3.Error as e:
-                await interaction.response.send_message                    f"❌ Database error: {str(e)}", ephemeral=True)
+                await interaction.response.send_message(f"❌ Database error: {str(e)}", ephemeral=True)
             finally:
                 conn.close()
 
