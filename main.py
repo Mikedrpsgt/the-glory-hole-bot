@@ -125,23 +125,34 @@ class ApplicationModal(discord.ui.Modal,
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            if not self.response_channel:
-                await interaction.response.send_message(
-                    "❌ Error: Application channel not found. Please contact an admin.",
-                    ephemeral=True)
-                return
+            # Add user to rewards program
+            conn = sqlite3.connect('orders.db')
+            c = conn.cursor()
+            c.execute(
+                "INSERT OR IGNORE INTO rewards (user_id, points, loyalty_tier, username) VALUES (?, ?, ?, ?)",
+                (interaction.user.id, 50, "Flirty Bronze", interaction.user.display_name))
+            conn.commit()
+            conn.close()
 
-            embed = discord.Embed(title="✨ New VIP Application",
-                                  color=discord.Color.gold())
-            embed.add_field(name="Applicant",
-                            value=f"<@{interaction.user.id}>",
-                            inline=False)
-            embed.add_field(name="Name", value=self.name.value, inline=True)
-            embed.add_field(name="Why Join",
-                            value=self.why_join.value,
-                            inline=False)
+            # Assign VIP role
+            vip_role = interaction.guild.get_role(1337508682417700961)
+            if vip_role:
+                await interaction.user.add_roles(vip_role)
+            
+            # Send notification to VIP channel
+            vip_channel = interaction.client.get_channel(1337646191994867772)
+            if vip_channel:
+                welcome_embed = discord.Embed(
+                    title="🎉 New VIP Member!",
+                    description=f"Welcome {interaction.user.mention} to Sweet Holes VIP!",
+                    color=discord.Color.gold())
+                welcome_embed.add_field(name="Introduction", value=self.why_join.value)
+                await vip_channel.send(embed=welcome_embed)
 
-            await self.response_channel.send(embed=embed)
+            # Confirm to user
+            await interaction.response.send_message(
+                "✅ Welcome to Sweet Holes VIP! Your role has been assigned and you've been added to our rewards program!",
+                ephemeral=True)
 
             # Assign VIP role
             try:
