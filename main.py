@@ -2310,7 +2310,6 @@ async def on_ready():
             await menu_channel.send(embed=embed, view=MenuView())
 
         if order_channel:
-            await order_channel.purge(limit=100)
             embed = discord.Embed(
                 title="🍩 Sweet Holes Order System 🍩",
                 description="What can we get for you today, sugar? 😘",
@@ -2318,7 +2317,6 @@ async def on_ready():
             await order_channel.send(embed=embed, view=OrderView())
 
         if tier_channel:
-            await tier_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💖 Check Your VIP Status 💖",
                 description="Use `/my_tier` to check your tier and points!",
@@ -2333,7 +2331,6 @@ async def on_ready():
             await membership_channel.send(embed=embed)
 
         if complaints_channel:
-            await complaints_channel.purge(limit=100)
             embed = discord.Embed(
                 title="📝 File a Complaint",
                 description="Having an issue? Let us know below.",
@@ -2341,7 +2338,6 @@ async def on_ready():
             await complaints_channel.send(embed=embed, view=ComplaintView())
 
         if suggestion_channel:
-            await suggestion_channel.purge(limit=100)
             embed = discord.Embed(
                 title="💡 Make a Suggestion",
                 description=
@@ -2402,7 +2398,6 @@ async def on_ready():
             await vendor_channel.send(embed=embed, view=view)
 
         if redeem_channel:
-            await redeem_channel.purge(limit=100)
             embed = discord.Embed(
                 title="🎁 Sweet Holes Rewards Redemption",
                 description="Click below to redeem your reward points!",
