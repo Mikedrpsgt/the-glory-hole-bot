@@ -1900,12 +1900,9 @@ async def on_ready():
         # Setup channel interfaces
         for channel_name, channel in channels.items():
             if channel:
-                await channel.purge(limit=100)
-
                 if channel_name == 'menu':
                     menu_channel = bot.get_channel(1337692528509456414)
                     if menu_channel:
-                        await menu_channel.purge(limit=100)
                         embed = discord.Embed(
                             title="🎀 Sweet Holes Interactive Menu 🎀",
                             description="Click the buttons below to interact!",
@@ -2127,7 +2124,6 @@ async def on_ready():
                     suggestions_channel = bot.get_channel(1337508683286052895)
                     if suggestions_channel:
                         try:
-                            await suggestions_channel.purge(limit=100)
                             embed = discord.Embed(
                                 title="💡 Make a Suggestion",
                                 description=
