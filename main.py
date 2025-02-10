@@ -2051,7 +2051,7 @@ async def on_ready():
                     vendor_management_channel = bot.get_channel(
                         1337709954336952391)
                     if vendor_management_channel:
-                        await vendor_management_channel.purge(limit=100)
+                        pass  # Keep existing messages
                         embed = discord.Embed(
                             title="🏪 Vendor Reward Management",
                             description=
@@ -2064,7 +2064,7 @@ async def on_ready():
                 elif channel_name == 'points_management':
                     points_management_channel = channels['points_management']
                     if points_management_channel:
-                        await points_management_channel.purge(limit=100)
+                        pass  # Keep existing messages
                         embed = discord.Embed(
                             title="🎮 Points Management",
                             description="Add or remove points from users",
@@ -2451,7 +2451,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keepalive import keep_alive
+from keep_alive import keep_alive
 
 keep_alive()  # This starts the Flask server in a separate thread
 
@@ -2469,7 +2469,7 @@ if not TOKEN:
 if not TOKEN.strip().startswith(('M', 'N', 'O')):
     print(
         "❌ Error: Invalid Discord bot token format. Please check your token in the Secrets tab."
-    )
+)
     exit(1)
 
 try:
