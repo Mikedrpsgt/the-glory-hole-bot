@@ -35,7 +35,7 @@ def setup_database():
 
         # Create tables if they don't exist
         c.execute('''CREATE TABLE IF NOT EXISTS orders 
-                     (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, item TEXT, quantity INTEGER, status TEXT, 
+                     (order_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, item TEXT, quantity INTEGER, status TEXT, 
                       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS rewards 
@@ -46,22 +46,23 @@ def setup_database():
                       last_daily TIMESTAMP)''')
 
         c.execute('''CREATE TABLE IF NOT EXISTS feedback 
-                     (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, rating INTEGER, comment TEXT)'''
+                     (feedback_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, rating INTEGER, comment TEXT)'''
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS complaints
                      (complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                      user_id INTEGER, username TEXT, complaint TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS suggestions
                      (suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      user_id INTEGER, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
+                      user_id INTEGER, username TEXT, suggestion TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)'''
                   )
 
         c.execute('''CREATE TABLE IF NOT EXISTS vendor_rewards
                      (reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      vendor_id INTEGER, reward_name TEXT, points_cost INTEGER, description TEXT)'''
+                      vendor_id INTEGER, vendor_username TEXT, reward_name TEXT, 
+                      points_cost INTEGER, description TEXT)'''
                   )
 
         c.execute('COMMIT')
@@ -238,8 +239,8 @@ class OrderView(View):
                 conn = sqlite3.connect('orders.db')
                 c = conn.cursor()
                 c.execute(
-                    "INSERT INTO orders (user_id, item, quantity, status) VALUES (?, ?, ?, 'Pending')",
-                    (interaction.user.id, order_text, 1))
+                    "INSERT INTO orders (user_id, item, quantity, status, username) VALUES (?, ?, ?, ?, ?)",
+                    (interaction.user.id, order_text, 1, 'Pending', interaction.user.display_name))
                 conn.commit()
                 order_id = c.lastrowid
                 conn.close()
@@ -805,8 +806,7 @@ class GivePointsModal(discord.ui.Modal, title="🎁 Give Points"):
 
                 # Verify points were added
                 c.execute("SELECT points FROM rewards WHERE user_id = ?",
-                          (member.id, ))
-                new_points = c.fetchone()[0]
+                          (member.id, ))                new_points = c.fetchone()[0]
 
                 await interaction.response.send_message(
                     f"✅ Added {points} points to {member.display_name}\nNew total: {new_points} points",
@@ -1406,8 +1406,8 @@ class ComplaintModal(discord.ui.Modal, title="📝 File a Complaint"):
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute(
-                "INSERT INTO complaints (user_id, complaint) VALUES (?, ?)",
-                (interaction.user.id, self.complaint.value))
+                "INSERT INTO complaints (user_id, complaint, username) VALUES (?, ?, ?)",
+                (interaction.user.id, self.complaint.value, interaction.user.display_name))
             conn.commit()
             conn.close()
 
@@ -1444,8 +1444,8 @@ class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
             conn = sqlite3.connect('orders.db')
             c = conn.cursor()
             c.execute(
-                "INSERT INTO suggestions (user_id, suggestion) VALUES (?, ?)",
-                (interaction.user.id, self.suggestion.value))
+                "INSERT INTO suggestions (user_id, suggestion, username) VALUES (?, ?, ?)",
+                (interaction.user.id, self.suggestion.value, interaction.user.display_name))
             conn.commit()
             conn.close()
 
@@ -2467,7 +2467,7 @@ async def on_ready():
 
 
 # Import and start the keep_alive server first
-from keepalive import keep_alive
+from keep_alive import keep_alive
 
 keep_alive()  # This starts the Flask server in a separate thread
 
